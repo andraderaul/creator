@@ -1,0 +1,16 @@
+{
+  "feature_structure": {
+    "hooks": {
+      "file": "index.ts"
+    },
+    "containers": {
+      "file": "index.ts"
+    },
+    "components": {
+      "file": "index.ts"
+    },
+    "services": {
+      "file": "index.ts"
+    }
+  }
+}
