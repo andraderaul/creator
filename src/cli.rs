@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
@@ -8,6 +10,14 @@ use structopt::StructOpt;
 pub struct Opt {
     #[structopt(subcommand)]
     pub command: Command,
+
+    #[structopt(
+        short = "c",
+        long = "config",
+        default_value = "config.json",
+        parse(from_os_str)
+    )]
+    pub config_file: PathBuf,
 }
 
 #[derive(StructOpt, Debug)]
