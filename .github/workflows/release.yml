@@ -17,16 +17,40 @@ jobs:
           rustup target add $TARGET
           cargo build --release --target $TARGET --locked
 
-      - name: Archive Linux Binary
-        run: |
-          mkdir -p release
-          cp target/x86_64-unknown-linux-musl/release/creator release/
+      - name: Create Release Directory
+        run: mkdir -p release
         working-directory: ${{ github.workspace }}
+
+      - name: Archive Linux Binary
+        run: cp target/$TARGET/release/creator release/
+        working-directory: ${{ github.workspace }}
+
+  # build-macos:
+  #   runs-on: macos-latest
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
+
+  #     - name: Build macOS Binary
+  #       run: |
+  #         TARGET=x86_64-apple-darwin
+  #         cargo build --release --target $TARGET --locked
+  #       env:
+  #         MACOSX_DEPLOYMENT_TARGET: 10.7
+
+  #     - name: Archive macOS Binary
+  #       run: |
+  #         mkdir -p release
+  #         cp target/x86_64-apple-darwin/release/creator release/
+  #       working-directory: ${{ github.workspace }}
 
   deploy:
     needs: [build]
     runs-on: ubuntu-latest
     steps:
+      - name: Run ls
+        run: ls
+
       - name: Upload Release Artifacts
         uses: actions/upload-artifact@v4
         with:
