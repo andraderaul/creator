@@ -1,2 +1,2 @@
-pub mod cli;
-pub mod feature;
+pub mod creator;
+pub mod opts;
