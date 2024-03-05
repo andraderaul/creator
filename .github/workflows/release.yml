@@ -1,0 +1,34 @@
+name: Build and Release Binary
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Build Linux Binary
+        run: |
+          TARGET=x86_64-unknown-linux-musl
+          rustup target add $TARGET
+          cargo build --release --target $TARGET --locked
+
+      - name: Archive Linux Binary
+        run: |
+          mkdir -p release
+          cp target/x86_64-unknown-linux-musl/release/creator release/
+        working-directory: ${{ github.workspace }}
+
+  deploy:
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Upload Release Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: release
+          path: release
