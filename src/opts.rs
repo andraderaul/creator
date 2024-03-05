@@ -30,4 +30,8 @@ pub enum Command {
         #[structopt(help = "Feature name")]
         feature_name: String,
     },
+    #[structopt(about = "Create a new core")]
+    NewCore {},
+    #[structopt(about = "Create a new core")]
+    NewApplication {},
 }

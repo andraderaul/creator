@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Context, Ok, Result};
+use anyhow::{anyhow, Ok, Result};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, fs, path::PathBuf};
 
@@ -41,6 +41,31 @@ impl Creator {
         }
     }
 
+    pub fn create_feature(&self, key: &str, main_folder_name: &str) -> Result<()> {
+        let feature_path = PathBuf::from(key).join(main_folder_name);
+        self.create(key, feature_path)
+    }
+
+    pub fn create_core(&self, key: &str) -> Result<()> {
+        let core_path = PathBuf::from(key);
+        self.create(key, core_path)
+    }
+
+    pub fn create_application(&self, key: &str) -> Result<()> {
+        let application_path = PathBuf::from(key);
+        self.create(key, application_path)
+    }
+
+    pub fn log(&self) {
+        println!("{:?}", &self.data);
+    }
+
+    fn create(&self, key: &str, path: PathBuf) -> Result<()> {
+        let folder_structure = self.get_sub_structure(key)?;
+
+        create_folders(&path, folder_structure)
+    }
+
     fn get_sub_structure(&self, key: &str) -> Result<&SubStructure> {
         if let Some(sub_structure) = self.data.creator.get(key) {
             return Ok(sub_structure);
@@ -50,17 +75,6 @@ impl Creator {
             "creator get sub structure received an invalid key {}",
             key
         ))
-    }
-
-    pub fn create(&self, key: &str, main_folder_name: &str) -> Result<()> {
-        let feature_path = PathBuf::from(key).join(main_folder_name);
-        let folder_structure = self.get_sub_structure(key)?;
-
-        create_folders(&feature_path, folder_structure)
-    }
-
-    pub fn log(&self) {
-        println!("{:?}", &self.data);
     }
 }
 

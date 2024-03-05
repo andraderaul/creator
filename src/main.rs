@@ -11,8 +11,16 @@ fn main() -> Result<()> {
 
     match opt.command {
         Command::NewFeature { feature_name } => {
-            creator.create("features", &feature_name)?;
+            creator.create_feature("features", &feature_name)?;
             println!("Feature '{}' created successfully!", feature_name);
+        }
+        Command::NewCore {} => {
+            creator.create_core("core")?;
+            println!("Core created successfully!",);
+        }
+        Command::NewApplication {} => {
+            creator.create_application("application")?;
+            println!("Application created successfully!",);
         }
     }
 
