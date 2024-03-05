@@ -1,11 +1,8 @@
 use anyhow::{anyhow, Context, Ok, Result};
 use serde::{Deserialize, Serialize};
-use std::{
-    collections::HashMap,
-    fs,
-    io::Write,
-    path::{Path, PathBuf},
-};
+use std::{collections::HashMap, fs, path::PathBuf};
+
+use crate::file_utils::create_folders;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct FileStructure {
@@ -71,34 +68,6 @@ fn default_data() -> Data {
     Data {
         creator: HashMap::new(),
     }
-}
-
-// move this to a new file
-pub fn create_folders(path: &Path, config: &SubStructure) -> Result<()> {
-    for (folder_name, folder_config) in config {
-        let folder_path = path.join(folder_name);
-        fs::create_dir_all(&folder_path)
-            .with_context(|| format!("Failed to create folder '{}'", folder_path.display()))?;
-        let file = &folder_config.file;
-        create_files(&folder_path.join(file)).with_context(|| {
-            format!(
-                "Failed to create file in folder '{}'",
-                folder_path.display()
-            )
-        })?;
-    }
-
-    Ok(())
-}
-
-pub fn create_files(file_path: &Path) -> Result<()> {
-    let mut file = fs::File::create(file_path)
-        .with_context(|| format!("Failed to create file '{}'", file_path.display()))?;
-    let content = "Hello, Rust!";
-    file.write_all(content.as_bytes())
-        .with_context(|| format!("Failed to write content to file '{}'", file_path.display()))?;
-
-    Ok(())
 }
 
 #[cfg(test)]
