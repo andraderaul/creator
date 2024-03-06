@@ -1,6 +1,6 @@
 # Creator
 
-[![Code Quality](https://github.com/andraderaul/creator/actions/workflows/quality.yml/badge.svg)](https://github.com/andraderaul/creator/actions/workflows/quality.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Code Quality](https://github.com/andraderaul/creator/actions/workflows/quality.yml/badge.svg)](https://github.com/andraderaul/creator/actions/workflows/quality.yml) [![Release](https://github.com/andraderaul/creator/actions/workflows/release.yml/badge.svg)](https://github.com/andraderaul/creator/actions/workflows/release.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 ## Description
 
