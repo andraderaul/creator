@@ -8,16 +8,16 @@
 
 ## 📝 Table of Contents
 
-- [Features](#🚧-features)
-- [Downloading Artifacts](#🧱-downloading-artifacts)
-- [Installation](#🚚-installation)
-- [Usage](#🎙️-usage)
+- [Features](#features)
+- [Downloading Artifacts](#downloading-artifacts)
+- [Installation](#installation)
+- [Usage](#usage)
 - [Contributing](#contributing)
 - [License](#license)
 - [Acknowledgements](#acknowledgements)
-- [Contact](#📇-contact)
+- [Contact](#contact)
 
-## 🚧 Features
+## Features
 
 This is the current roadmap for **Creator**:
 
@@ -33,11 +33,11 @@ This is the current roadmap for **Creator**:
   - [x] new application
   - [ ] new subdirectory based on the config file
 
-## 🧱 Downloading Artifacts
+## Downloading Artifacts
 
 Currently, you can download pre-built binaries for this project from the [Releases](https://github.com/andraderaul/creator/actions/workflows/release.yml) page. Select the appropriate version and download the binary for your platform.
 
-## 🚚 Installation
+## Installation
 
 After downloading the binary, you can follow these steps to install and use the CLI:
 
@@ -54,7 +54,7 @@ After downloading the binary, you can follow these steps to install and use the 
    mv creator /usr/local/bin/
    ```
 
-## 🎙️ Usage
+## Usage
 
 > TODO: include screenshots or gif
 
@@ -66,8 +66,7 @@ creator --help
 
 https://github.com/andraderaul/creator/assets/7689902/dd52608a-8e59-403a-978e-2a89133f6b54
 
-
-## 👯 Contributing
+## Contributing
 
 We welcome contributions to make **Creator** even better. If you have suggestions, bug reports, or want to contribute code, follow these steps:
 
@@ -109,7 +108,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 > TODO: Improve this section
 
-## 📇 Contact
+## Contact
 
 For questions, feedback, or issues, feel free to reach out:
 
