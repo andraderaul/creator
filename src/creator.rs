@@ -18,41 +18,41 @@ struct Data {
 }
 
 pub struct Creator {
-    config: PathBuf,
-    pwd: PathBuf,
+    source: PathBuf,
     data: Data,
 }
 
 impl Creator {
-    pub fn from_config(config: PathBuf, pwd: PathBuf) -> Self {
+    pub fn from_config(config: PathBuf, source: PathBuf) -> Self {
         if fs::metadata(&config).is_ok() {
             let contents = fs::read_to_string(&config);
             let contents = contents.unwrap_or(String::from("{\"creator\":{}}"));
             let data = serde_json::from_str(&contents);
             let data = data.unwrap_or(default_data());
 
-            return Creator { config, pwd, data };
+            return Creator { source, data };
         }
 
         Creator {
-            config,
-            pwd,
+            source,
             data: default_data(),
         }
     }
 
     pub fn create_feature(&self, key: &str, main_folder_name: &str) -> Result<()> {
-        let feature_path = PathBuf::from(key).join(main_folder_name);
+        let feature_path = PathBuf::from(self.source.as_path())
+            .join(key)
+            .join(main_folder_name);
         self.create(key, feature_path)
     }
 
     pub fn create_core(&self, key: &str) -> Result<()> {
-        let core_path = PathBuf::from(key);
+        let core_path = PathBuf::from(self.source.as_path()).join(key);
         self.create(key, core_path)
     }
 
     pub fn create_application(&self, key: &str) -> Result<()> {
-        let application_path = PathBuf::from(key);
+        let application_path = PathBuf::from(self.source.as_path()).join(key);
         self.create(key, application_path)
     }
 

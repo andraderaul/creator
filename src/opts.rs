@@ -19,8 +19,13 @@ pub struct Opts {
     )]
     pub config: PathBuf,
 
-    #[structopt(short = "p", long = "pwd", default_value = ".", parse(from_os_str))]
-    pub pwd: PathBuf,
+    #[structopt(
+        short = "s",
+        long = "source_dir",
+        default_value = ".",
+        parse(from_os_str)
+    )]
+    pub sourc_dir: PathBuf,
 }
 
 #[derive(StructOpt, Debug)]

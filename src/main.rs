@@ -7,11 +7,12 @@ use structopt::StructOpt;
 
 fn main() -> Result<()> {
     let opt = Opts::from_args();
-    let creator = Creator::from_config(opt.config, opt.pwd);
+    let creator = Creator::from_config(opt.config, opt.sourc_dir);
 
     match opt.command {
         Command::NewFeature { feature_name } => {
             creator.create_feature("features", &feature_name)?;
+
             println!("Feature '{}' created successfully!", feature_name);
         }
         Command::NewCore {} => {
