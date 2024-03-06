@@ -64,6 +64,9 @@ You can see all the CLI commands by running the following command.
 creator --help
 ```
 
+https://github.com/andraderaul/creator/assets/7689902/dd52608a-8e59-403a-978e-2a89133f6b54
+
+
 ## 👯 Contributing
 
 We welcome contributions to make **Creator** even better. If you have suggestions, bug reports, or want to contribute code, follow these steps:
