@@ -6,6 +6,8 @@ on:
 
 jobs:
   build:
+    env:
+      TARGET: x86_64-unknown-linux-musl
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -13,7 +15,6 @@ jobs:
 
       - name: Build Linux Binary
         run: |
-          TARGET=x86_64-unknown-linux-musl
           rustup target add $TARGET
           cargo build --release --target $TARGET --locked
 
@@ -24,6 +25,12 @@ jobs:
       - name: Archive Linux Binary
         run: cp target/$TARGET/release/creator release/
         working-directory: ${{ github.workspace }}
+
+      - name: Upload Release Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release
+          path: release
 
   # build-macos:
   #   runs-on: macos-latest
@@ -44,15 +51,15 @@ jobs:
   #         cp target/x86_64-apple-darwin/release/creator release/
   #       working-directory: ${{ github.workspace }}
 
-  deploy:
-    needs: [build]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Run ls
-        run: ls
+  # deploy:
+  #   needs: [build]
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Run ls
+  #       run: ls
 
-      - name: Upload Release Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: release
-          path: release
+  #     - name: Upload Release Artifacts
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: release
+  #         path: release
