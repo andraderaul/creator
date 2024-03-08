@@ -1,26 +1,31 @@
-mod opts;
-
 use anyhow::Result;
-use creator::creator::Creator;
-use opts::{Command, Opts};
-use structopt::StructOpt;
+use clap::Parser;
+use creator::{
+    config::Config,
+    creator::Creator,
+    opts::{Commands, Opts},
+};
 
 fn main() -> Result<()> {
-    let opt = Opts::from_args();
-    let creator = Creator::from_config(opt.config, opt.sourc_dir);
+    let config: Config = Opts::parse().try_into()?;
 
-    match opt.command {
-        Command::NewFeature { feature_name } => {
+    println!("avemaria {:?}", config);
+    let creator = Creator::from_config(config.config, config.source_dir);
+
+    match config.commands {
+        Commands::NewFeature { feature_name } => {
             creator.create_feature("features", &feature_name)?;
 
             println!("Feature '{}' created successfully!", feature_name);
         }
-        Command::NewCore {} => {
+        Commands::NewCore {} => {
             creator.create_core("core")?;
+
             println!("Core created successfully!",);
         }
-        Command::NewApplication {} => {
+        Commands::NewApplication {} => {
             creator.create_application("application")?;
+
             println!("Application created successfully!",);
         }
     }
