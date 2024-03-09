@@ -1,42 +1,29 @@
+use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
-use structopt::StructOpt;
-
-#[derive(StructOpt, Debug)]
-#[structopt(
-    name = "creator-cli",
-    about = "CLI tool for creating React Native structure folders"
+#[derive(Parser, Debug)]
+#[command(version, about, long_about = None)]
+#[clap(
+    about = "CLI tool for creating React Native structure folders",
+    author = "Raul Andrade"
 )]
 pub struct Opts {
-    #[structopt(subcommand)]
-    pub command: Command,
+    #[clap(short = 'c', long = "config")]
+    pub config: Option<PathBuf>,
 
-    #[structopt(
-        short = "c",
-        long = "config",
-        default_value = "config.json",
-        parse(from_os_str)
-    )]
-    pub config: PathBuf,
+    #[clap(short = 's', long = "source_dir")]
+    pub source_dir: Option<PathBuf>,
 
-    #[structopt(
-        short = "s",
-        long = "source_dir",
-        default_value = ".",
-        parse(from_os_str)
-    )]
-    pub sourc_dir: PathBuf,
+    #[command(subcommand)]
+    pub commands: Option<Commands>,
 }
 
-#[derive(StructOpt, Debug)]
-pub enum Command {
-    #[structopt(about = "Create a new feature")]
-    NewFeature {
-        #[structopt(help = "Feature name")]
-        feature_name: String,
-    },
-    #[structopt(about = "Create a new core")]
+#[derive(Subcommand, Debug)]
+pub enum Commands {
+    #[clap(about = "Create a new feature")]
+    NewFeature { feature_name: String },
+    #[clap(about = "Create a new core")]
     NewCore {},
-    #[structopt(about = "Create a new core")]
+    #[clap(about = "Create a new application")]
     NewApplication {},
 }
