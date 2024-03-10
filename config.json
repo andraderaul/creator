@@ -2,34 +2,43 @@
   "creator": {
     "features": {
       "hooks": {
+        "template": "templates/hooks.hbs",
         "file": "index.ts"
       },
       "containers": {
+        "template": "templates/components.hbs",
         "file": "index.ts"
       },
       "components": {
+        "template": "templates/components.hbs",
         "file": "index.ts"
       },
       "services": {
+        "template": "templates/components.hbs",
         "file": "index.ts"
       }
     },
     "core": {
       "notification": {
+        "template": "templates/default.hbs",
         "file": "index.ts"
       },
       "localization": {
+        "template": "templates/default.hbs",
         "file": "index.ts"
       },
       "logger": {
+        "template": "templates/default.hbs",
         "file": "index.ts"
       }
     },
     "application": {
       "home": {
+        "template": "templates/default.hbs",
         "file": "index.ts"
       },
       "product": {
+        "template": "templates/default.hbs",
         "file": "index.ts"
       }
     }

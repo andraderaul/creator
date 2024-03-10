@@ -26,4 +26,8 @@ pub enum Commands {
     NewCore {},
     #[clap(about = "Create a new application")]
     NewApplication {},
+
+    //
+    #[clap(about = "Create a new component inside a feature")]
+    NewComponent { feature: String, name: String },
 }

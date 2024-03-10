@@ -9,7 +9,6 @@ use creator::{
 fn main() -> Result<()> {
     let config: Config = Opts::parse().try_into()?;
 
-    println!("avemaria {:?}", config);
     let creator = Creator::from_config(config.config, config.source_dir);
 
     match config.commands {
@@ -21,12 +20,23 @@ fn main() -> Result<()> {
         Commands::NewCore {} => {
             creator.create_core("core")?;
 
-            println!("Core created successfully!",);
+            println!("Core created successfully!");
         }
         Commands::NewApplication {} => {
             creator.create_application("application")?;
 
-            println!("Application created successfully!",);
+            println!("Application created successfully!");
+        }
+
+        Commands::NewComponent { feature, name } => {
+            println!("{:} - {:}", name, feature);
+
+            creator.create_component_module("features", &feature, "components", &name)?;
+
+            println!(
+                "Feature '{}' and Component '{}' created successfully!",
+                feature, name
+            );
         }
     }
 
