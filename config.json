@@ -7,11 +7,11 @@
       },
       "containers": {
         "template": "templates/components.hbs",
-        "file": "index.ts"
+        "file": "index.tsx"
       },
       "components": {
         "template": "templates/components.hbs",
-        "file": "index.ts"
+        "file": "index.tsx"
       },
       "services": {
         "template": "templates/components.hbs",
