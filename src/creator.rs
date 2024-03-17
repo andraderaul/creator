@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, fs, path::PathBuf};
 
 use crate::{
-    file_utils::{create_file, create_folders},
+    file_utils::{create_file, create_folder},
     generator::Generator,
 };
 
@@ -78,9 +78,7 @@ impl Creator {
             .join(component_name)
             .with_extension("tsx");
 
-        println!("path {:?}", component.clone());
-
-        let template = Generator::generate(&template_path, component_name.to_string()).unwrap();
+        let template = Generator::generate(&template_path, component_name.to_string())?;
 
         create_file(&component, template)?;
 
@@ -94,7 +92,18 @@ impl Creator {
     fn create(&self, key: &str, path: PathBuf) -> Result<()> {
         let folder_structure = self.get_sub_structure(key)?;
 
-        create_folders(&path, folder_structure)
+        for (folder_name, folder_config) in folder_structure {
+            let folder_path = path.join(folder_name);
+            create_folder(&folder_path)?;
+
+            let file_path = folder_path.join(&folder_config.file);
+            let template_path = PathBuf::from(&folder_config.template);
+            let template = Generator::generate(&template_path, folder_name.to_string())?;
+
+            create_file(&file_path, template)?;
+        }
+
+        Ok(())
     }
 
     fn get_sub_structure(&self, key: &str) -> Result<&SubStructure> {
