@@ -6,23 +6,38 @@ pub struct Generator {}
 
 impl Generator {
     pub fn generate(path: &PathBuf, name: String) -> Result<String> {
-        //need improvements
-        if fs::metadata(&path).is_ok() {
-            let mut handlebars = Handlebars::new();
+        let source = match fs::read_to_string(&path) {
+            Ok(s) => s,
+            Err(err) => {
+                println!(
+                    "[warn] Failed to read the source directory path '{}': {}",
+                    path.display(),
+                    err
+                );
 
-            let source = fs::read_to_string(&path);
-            let source = source.unwrap();
-            handlebars
-                .register_template_string("component", source)
-                .unwrap();
+                String::from("export function {{templateName}}(){}")
+            }
+        };
 
-            let mut data = BTreeMap::new();
-            data.insert("componentName".to_string(), name);
-            let result = handlebars.render("component", &data)?;
+        let mut handlebars = Handlebars::new();
 
-            return Ok(result);
-        }
+        handlebars
+            .register_template_string("template", &source)
+            .map_err(|err| {
+                anyhow!(
+                    "Cannot register template string '{}' in Handlebars: {}",
+                    source,
+                    err
+                )
+            })?;
 
-        Err(anyhow!("Failed to read the source directory path."))
+        let mut data = BTreeMap::new();
+        data.insert("templateName".to_string(), name);
+
+        let result = handlebars
+            .render("template", &data)
+            .map_err(|err| anyhow!("Cannot render the template string: '{:?}' {}", data, err))?;
+
+        return Ok(result);
     }
 }
