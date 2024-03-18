@@ -25,7 +25,7 @@ This is the current roadmap for **Creator**:
 
 - [x] **Source Directory Definition**: Define and customize where your project's folder structure will be created.
 
-- [ ] **Generate Code Definition**: Generate code based on the config file.
+- [x] **Generate Code Definition**: Generate code based on the config file.
 
 - [ ] **CLI Interface**: Use a simple and intuitive command-line interface to create:
   - [x] new features
