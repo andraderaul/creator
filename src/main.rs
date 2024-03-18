@@ -29,8 +29,6 @@ fn main() -> Result<()> {
         }
 
         Commands::NewComponent { feature, name } => {
-            println!("{:} - {:}", name, feature);
-
             creator.create_component_module("features", &feature, "components", &name)?;
 
             println!(
