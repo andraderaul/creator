@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, fs, path::PathBuf};
 
 use crate::{
-    file_utils::{create_file, create_folder},
+    file_utils::{create_file, create_folder, to_kebab_case, to_pascal_case},
     generator::Generator,
 };
 
@@ -46,7 +46,7 @@ impl Creator {
     pub fn create_feature(&self, key: &str, main_folder_name: &str) -> Result<()> {
         let feature_path = PathBuf::from(self.source.as_path())
             .join(key)
-            .join(main_folder_name);
+            .join(to_kebab_case(main_folder_name));
         self.create(key, feature_path)
     }
 
@@ -75,10 +75,10 @@ impl Creator {
             .join(&main_key)
             .join(&feature_name)
             .join(&sub_key)
-            .join(component_name)
+            .join(to_kebab_case(component_name))
             .with_extension("tsx");
 
-        let template = Generator::generate(&template_path, component_name.to_string())?;
+        let template = Generator::generate(&template_path, to_pascal_case(component_name))?;
 
         create_file(&component, template)?;
 
@@ -93,12 +93,12 @@ impl Creator {
         let folder_structure = self.get_sub_structure(key)?;
 
         for (folder_name, folder_config) in folder_structure {
-            let folder_path = path.join(folder_name);
+            let folder_path = path.join(to_kebab_case(folder_name));
             create_folder(&folder_path)?;
 
             let file_path = folder_path.join(&folder_config.file);
             let template_path = PathBuf::from(&folder_config.template);
-            let template = Generator::generate(&template_path, folder_name.to_string())?;
+            let template = Generator::generate(&template_path, to_pascal_case(folder_name))?;
 
             create_file(&file_path, template)?;
         }
