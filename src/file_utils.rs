@@ -1,32 +1,88 @@
-use anyhow::{Context, Ok, Result};
+use anyhow::{anyhow, Result};
 use std::{fs, io::Write, path::Path};
 
-use crate::creator::SubStructure;
-
-// TODO: let this function generic with generic type
-pub fn create_folders(path: &Path, config: &SubStructure) -> Result<()> {
-    for (folder_name, folder_config) in config {
-        let folder_path = path.join(folder_name);
-        fs::create_dir_all(&folder_path)
-            .with_context(|| format!("Failed to create folder '{}'", folder_path.display()))?;
-        let file = &folder_config.file;
-        create_files(&folder_path.join(file)).with_context(|| {
-            format!(
-                "Failed to create file in folder '{}'",
-                folder_path.display()
-            )
-        })?;
-    }
-
-    Ok(())
+pub fn create_folder(folder_path: &Path) -> Result<()> {
+    fs::create_dir_all(folder_path).map_err(|err| {
+        anyhow!(
+            "Failed to create folder '{}': {}",
+            folder_path.display(),
+            err
+        )
+    })
 }
 
-pub fn create_files(file_path: &Path) -> Result<()> {
+pub fn create_file(file_path: &Path, content: String) -> Result<usize> {
     let mut file = fs::File::create(file_path)
-        .with_context(|| format!("Failed to create file '{}'", file_path.display()))?;
-    let content = "Hello, Rust!";
-    file.write_all(content.as_bytes())
-        .with_context(|| format!("Failed to write content to file '{}'", file_path.display()))?;
+        .map_err(|err| anyhow!("Failed to create file '{}': {}", file_path.display(), err))?;
 
-    Ok(())
+    file.write(content.as_bytes()).map_err(|err| {
+        anyhow!(
+            "Failed to write content to file '{}': {}",
+            file_path.display(),
+            err
+        )
+    })
+}
+
+pub fn to_kebab_case(input: &str) -> String {
+    input
+        .split_whitespace()
+        .map(|word| word.to_lowercase())
+        .collect::<Vec<_>>()
+        .join("-")
+}
+
+pub fn to_pascal_case(input: &str) -> String {
+    input
+        .split_whitespace()
+        .map(|word| {
+            let mut chars = word.chars();
+            match chars.next() {
+                None => String::new(),
+                Some(first) => {
+                    let mut rest = chars.collect::<String>();
+                    rest.make_ascii_lowercase();
+                    format!("{}{}", first.to_uppercase(), rest)
+                }
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("")
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    //TODO: test case with "nav-bar", "NavBar"
+
+    #[test]
+    fn test_to_kebab_case() {
+        let inputs = vec!["nav bar", "Nav Bar", "Nav bar", "nAV bAR"];
+
+        for input in inputs {
+            assert_eq!(to_kebab_case(input), "nav-bar");
+        }
+
+        let inputs = vec!["components", "cOMPONENTS", "COMPONENTS", "Components"];
+
+        for input in inputs {
+            assert_eq!(to_kebab_case(input), "components");
+        }
+    }
+
+    #[test]
+    fn test_to_pascal_case() {
+        let inputs = vec!["nav bar", "Nav Bar", "Nav bar", "nAV bAR"];
+
+        for input in inputs {
+            assert_eq!(to_pascal_case(input), "NavBar");
+        }
+
+        let inputs = vec!["components", "cOMPONENTS", "COMPONENTS", "Components"];
+
+        for input in inputs {
+            assert_eq!(to_pascal_case(input), "Components");
+        }
+    }
 }

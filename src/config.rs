@@ -46,6 +46,7 @@ fn get_commands(commands: Option<Commands>) -> Result<Commands> {
         "new-feature" => get_feature_commands(),
         "new-core" => get_core_commands(),
         "new-application" => get_application_commands(),
+        "new-component" => get_component_commands(),
 
         // This should not happen, as we're using Select with predefined options
         _ => return Err(anyhow!("Invalid command selected.")),
@@ -55,7 +56,6 @@ fn get_commands(commands: Option<Commands>) -> Result<Commands> {
 }
 
 fn get_config(config: Option<PathBuf>) -> Result<PathBuf> {
-    println!("aaaaaa {:?} aaaaas", config);
     if let Some(c) = config {
         return Ok(c);
     }
@@ -90,7 +90,12 @@ fn get_source_dir(source_dir: Option<PathBuf>) -> Result<PathBuf> {
 }
 
 fn get_main_commands_options() -> Vec<&'static str> {
-    vec!["new-feature", "new-core", "new-application"]
+    vec![
+        "new-feature",
+        "new-core",
+        "new-application",
+        "new-component",
+    ]
 }
 
 fn get_feature_commands() -> Commands {
@@ -124,6 +129,51 @@ fn get_application_commands() -> Commands {
     Commands::NewApplication {}
 }
 
+fn get_component_commands() -> Commands {
+    let feature_name = match Text::new("Enter the name of the feature: ")
+        .with_validator(|input: &str| {
+            if input.chars().count() > 0 {
+                Ok(Validation::Valid)
+            } else {
+                Ok(Validation::Invalid("Feature name cannot be empty.".into()))
+            }
+        })
+        .with_placeholder("feature_name")
+        .prompt()
+    {
+        Ok(name) => name,
+        Err(_) => {
+            eprintln!("Failed to read the feature name.");
+            std::process::exit(1);
+        }
+    };
+
+    let component_name = match Text::new("Enter the name of the component: ")
+        .with_validator(|input: &str| {
+            if input.chars().count() > 0 {
+                Ok(Validation::Valid)
+            } else {
+                Ok(Validation::Invalid(
+                    "Component name cannot be empty.".into(),
+                ))
+            }
+        })
+        .with_placeholder("component_name")
+        .prompt()
+    {
+        Ok(name) => name,
+        Err(_) => {
+            eprintln!("Failed to read the component name.");
+            std::process::exit(1);
+        }
+    };
+
+    Commands::NewComponent {
+        name: component_name,
+        feature: feature_name,
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -131,10 +181,11 @@ mod test {
     #[test]
     fn test_get_main_commands_options() {
         let options = get_main_commands_options();
-        assert_eq!(options.len(), 3);
+        assert_eq!(options.len(), 4);
         assert!(options.contains(&"new-feature"));
         assert!(options.contains(&"new-core"));
         assert!(options.contains(&"new-application"));
+        assert!(options.contains(&"new-component"));
     }
 
     #[test]

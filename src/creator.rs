@@ -2,10 +2,14 @@ use anyhow::{anyhow, Ok, Result};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, fs, path::PathBuf};
 
-use crate::file_utils::create_folders;
+use crate::{
+    file_utils::{create_file, create_folder, to_kebab_case, to_pascal_case},
+    generator::Generator,
+};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct FileStructure {
+    pub template: String,
     pub file: String,
 }
 
@@ -42,7 +46,7 @@ impl Creator {
     pub fn create_feature(&self, key: &str, main_folder_name: &str) -> Result<()> {
         let feature_path = PathBuf::from(self.source.as_path())
             .join(key)
-            .join(main_folder_name);
+            .join(to_kebab_case(main_folder_name));
         self.create(key, feature_path)
     }
 
@@ -56,6 +60,31 @@ impl Creator {
         self.create(key, application_path)
     }
 
+    pub fn create_component_module(
+        &self,
+        main_key: &str,
+        feature_name: &str,
+        sub_key: &str,
+        component_name: &str,
+    ) -> Result<()> {
+        let sub = self.get_sub_structure(main_key)?;
+        let file = self.get_file_structure(sub, sub_key)?;
+
+        let template_path = PathBuf::from(&file.template);
+        let component = PathBuf::from(&self.source)
+            .join(&main_key)
+            .join(&feature_name)
+            .join(&sub_key)
+            .join(to_kebab_case(component_name))
+            .with_extension("tsx");
+
+        let template = Generator::generate(&template_path, to_pascal_case(component_name))?;
+
+        create_file(&component, template)?;
+
+        Ok(())
+    }
+
     pub fn log(&self) {
         println!("{:?}", &self.data);
     }
@@ -63,7 +92,18 @@ impl Creator {
     fn create(&self, key: &str, path: PathBuf) -> Result<()> {
         let folder_structure = self.get_sub_structure(key)?;
 
-        create_folders(&path, folder_structure)
+        for (folder_name, folder_config) in folder_structure {
+            let folder_path = path.join(to_kebab_case(folder_name));
+            create_folder(&folder_path)?;
+
+            let file_path = folder_path.join(&folder_config.file);
+            let template_path = PathBuf::from(&folder_config.template);
+            let template = Generator::generate(&template_path, to_pascal_case(folder_name))?;
+
+            create_file(&file_path, template)?;
+        }
+
+        Ok(())
     }
 
     fn get_sub_structure(&self, key: &str) -> Result<&SubStructure> {
@@ -72,7 +112,22 @@ impl Creator {
         }
 
         Err(anyhow!(
-            "creator get sub structure received an invalid key {}",
+            "Failed to retrieve substructure from the Creator for key '{}'. The key may be invalid or missing.",
+            key
+        ))
+    }
+
+    fn get_file_structure<'a>(
+        &self,
+        sub_structure: &'a SubStructure,
+        key: &str,
+    ) -> Result<&'a FileStructure> {
+        if let Some(file_structure) = sub_structure.get(key) {
+            return Ok(file_structure);
+        }
+
+        Err(anyhow!(
+            "Failed to retrieve file structure from the Creator for key '{}'. The key may be invalid or missing.",
             key
         ))
     }
