@@ -2,7 +2,7 @@ use anyhow::{anyhow, Result};
 use inquire::{Select, Text, validator::Validation};
 use std::path::PathBuf;
 
-use crate::config_v2::ProjectConfig;
+use crate::config::ProjectConfig;
 use crate::opts::Commands;
 
 pub struct CliEngine {
@@ -262,7 +262,7 @@ impl CliEngine {
         category: &str,
         item_type: &str,
         name: &str,
-        item_config: &crate::config_v2::Item,
+        item_config: &crate::config::Item,
     ) -> Result<()> {
         use crate::file_utils::{create_file, create_folder, to_kebab_case, to_pascal_case};
         use crate::generator::Generator;

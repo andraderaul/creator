@@ -1,6 +1,6 @@
 use clap::Parser;
 
-use creator::config::{execute_config, Config};
+use creator::app::{execute_config, Config};
 use creator::opts::Opts;
 
 fn main() -> anyhow::Result<()> {
