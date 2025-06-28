@@ -250,7 +250,7 @@ mod tests {
         assert_eq!(config.project.name, "test-project");
         assert_eq!(config.project.version, "2.0");
         assert!(config.project.structure.contains_key("features"));
-        
+
         // Test validation
         config.validate().unwrap();
     }
@@ -305,7 +305,7 @@ mod tests {
 
         let config: ProjectConfig = serde_json::from_str(config_json).unwrap();
         config.validate().unwrap();
-        
+
         let features = config.get_category("features").unwrap();
         assert!(features.supports_dynamic_children());
         assert!(features.get_default_structure().is_some());
@@ -374,25 +374,30 @@ mod tests {
 
     #[test]
     fn test_clean_architecture_config_example() {
-        let config = ProjectConfig::load_and_validate(&PathBuf::from("config-clean-architecture.json")).unwrap();
-        
+        let config =
+            ProjectConfig::load_and_validate(&PathBuf::from("config-clean-architecture.json"))
+                .unwrap();
+
         // Validate basic project info
         assert_eq!(config.project.name, "my-react-native-clean-app");
         assert_eq!(config.project.version, "2.0");
-        
+
         // Test categories
         let categories = config.get_categories();
         assert!(categories.contains(&"infra".to_string()));
         assert!(categories.contains(&"features".to_string()));
         assert!(categories.contains(&"pages".to_string()));
         assert!(categories.contains(&"core".to_string()));
-        
+
         // Test features category (dynamic)
         let features = config.get_category("features").unwrap();
         assert!(features.supports_dynamic_children());
         assert!(features.get_default_structure().is_some());
-        assert_eq!(features.description, Some("Business features with dynamic creation support".to_string()));
-        
+        assert_eq!(
+            features.description,
+            Some("Business features with dynamic creation support".to_string())
+        );
+
         // Test pages category (static)
         let pages = config.get_category("pages").unwrap();
         assert!(!pages.supports_dynamic_children());
@@ -404,24 +409,25 @@ mod tests {
 
     #[test]
     fn test_module_based_config_example() {
-        let config = ProjectConfig::load_and_validate(&PathBuf::from("config-module-based.json")).unwrap();
-        
+        let config =
+            ProjectConfig::load_and_validate(&PathBuf::from("config-module-based.json")).unwrap();
+
         // Validate basic project info
         assert_eq!(config.project.name, "my-react-native-modular-app");
         assert_eq!(config.project.version, "2.0");
-        
+
         // Test categories
         let categories = config.get_categories();
         assert!(categories.contains(&"application".to_string()));
         assert!(categories.contains(&"modules".to_string()));
         assert!(categories.contains(&"shared".to_string()));
         assert!(categories.contains(&"external".to_string()));
-        
+
         // Test modules category (fully dynamic)
         let modules = config.get_category("modules").unwrap();
         assert!(modules.supports_dynamic_children());
         assert!(modules.get_default_structure().is_some());
-        
+
         // Test external category (mixed: static + dynamic)
         let external = config.get_category("external").unwrap();
         assert!(external.supports_dynamic_children());
@@ -433,24 +439,26 @@ mod tests {
 
     #[test]
     fn test_config_api_usage_patterns() {
-        let config = ProjectConfig::load_and_validate(&PathBuf::from("config-clean-architecture.json")).unwrap();
-        
+        let config =
+            ProjectConfig::load_and_validate(&PathBuf::from("config-clean-architecture.json"))
+                .unwrap();
+
         // Test typical CLI usage patterns
-        
+
         // 1. List available categories
         let categories = config.get_categories();
         assert!(!categories.is_empty());
-        
+
         // 2. Get category details
         let features = config.get_category("features").unwrap();
         assert!(features.description.is_some());
-        
+
         // 3. Check if dynamic children are supported
         if features.supports_dynamic_children() {
             let default_structure = features.get_default_structure().unwrap();
             assert!(!default_structure.is_empty());
         }
-        
+
         // 4. Get static items if available
         let pages = config.get_category("pages").unwrap();
         let page_items = pages.get_item_names();
@@ -460,4 +468,4 @@ mod tests {
             assert!(!dashboard.file_extension.is_empty());
         }
     }
-} 
+}

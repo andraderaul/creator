@@ -32,9 +32,14 @@ impl TryFrom<Opts> for Config {
 fn get_commands(commands: Option<Commands>, config_path: &PathBuf) -> Result<Commands> {
     if let Some(c) = commands {
         // Commands provided via CLI - validate config but don't run interactive mode
-        let _project_config = ProjectConfig::load_and_validate(config_path)
-            .map_err(|e| anyhow!("Config validation failed: {}. Please fix {} and try again.", e, config_path.display()))?;
-        
+        let _project_config = ProjectConfig::load_and_validate(config_path).map_err(|e| {
+            anyhow!(
+                "Config validation failed: {}. Please fix {} and try again.",
+                e,
+                config_path.display()
+            )
+        })?;
+
         return Ok(c);
     }
 
@@ -47,11 +52,14 @@ fn get_commands(commands: Option<Commands>, config_path: &PathBuf) -> Result<Com
             eprintln!("⚠️  Config validation failed: {}", e);
             eprintln!("💡 Would you like to:");
             eprintln!("   1. Fix the config file manually");
-            eprintln!("   2. Use basic interactive mode"); 
+            eprintln!("   2. Use basic interactive mode");
             eprintln!("   3. Exit and check config");
-            
+
             // For now, return error but in future could implement fallback mode
-            return Err(anyhow!("Invalid config. Please fix {} and try again.", config_path.display()));
+            return Err(anyhow!(
+                "Invalid config. Please fix {} and try again.",
+                config_path.display()
+            ));
         }
     };
 
@@ -69,8 +77,12 @@ fn get_config_path(config: Option<PathBuf>) -> Result<PathBuf> {
     }
 
     // Try to find config automatically
-    let default_configs = ["config.json", "config-clean-architecture.json", "config-module-based.json"];
-    
+    let default_configs = [
+        "config.json",
+        "config-clean-architecture.json",
+        "config-module-based.json",
+    ];
+
     for config_name in &default_configs {
         let path = PathBuf::from(config_name);
         if path.exists() {
@@ -99,7 +111,7 @@ fn get_source_dir(source_dir: Option<PathBuf>) -> Result<PathBuf> {
 fn get_source_dir_from_current() -> Result<PathBuf> {
     // Try common source directories
     let common_dirs = ["src", "app", "lib"];
-    
+
     for dir_name in &common_dirs {
         let path = PathBuf::from(dir_name);
         if path.exists() && path.is_dir() {
@@ -142,16 +154,12 @@ pub fn execute_config(config: Config) -> Result<()> {
 /// Handle init command (create new config)
 fn handle_init(preset: Option<&str>, config_path: &PathBuf) -> Result<()> {
     println!("🚀 Initializing new Creator project...");
-    
+
     let template_config = match preset {
-        Some("clean-architecture") => {
-            std::fs::read_to_string("config-clean-architecture.json")
-                .map_err(|_| anyhow!("Clean architecture template not found"))?
-        }
-        Some("module-based") => {
-            std::fs::read_to_string("config-module-based.json")
-                .map_err(|_| anyhow!("Module-based template not found"))?
-        }
+        Some("clean-architecture") => std::fs::read_to_string("config-clean-architecture.json")
+            .map_err(|_| anyhow!("Clean architecture template not found"))?,
+        Some("module-based") => std::fs::read_to_string("config-module-based.json")
+            .map_err(|_| anyhow!("Module-based template not found"))?,
         Some(custom) => {
             return Err(anyhow!("Unknown preset: {}", custom));
         }
@@ -162,7 +170,7 @@ fn handle_init(preset: Option<&str>, config_path: &PathBuf) -> Result<()> {
             let selected = Select::new("Select a preset:", presets)
                 .prompt()
                 .map_err(|_| anyhow!("Failed to select preset"))?;
-            
+
             match selected {
                 "clean-architecture" => std::fs::read_to_string("config-clean-architecture.json")?,
                 "module-based" => std::fs::read_to_string("config-module-based.json")?,
