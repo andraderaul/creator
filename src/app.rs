@@ -190,7 +190,6 @@ fn handle_init(preset: Option<&str>, config_path: &PathBuf) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::TempDir;
 
     #[test]
     fn test_config_path_detection() {
@@ -204,18 +203,5 @@ mod tests {
     fn test_source_dir_detection() {
         let manual_dir = get_source_dir(Some(PathBuf::from("test-src")));
         assert!(manual_dir.is_ok());
-    }
-
-    #[test]
-    fn test_config_from_opts() {
-        let opts = Opts {
-            config: Some(PathBuf::from("config-clean-architecture.json")),
-            source_dir: Some(PathBuf::from("src")),
-            commands: Some(Commands::List { category: None }),
-        };
-
-        // This would work if we're in the right directory
-        // let config = Config::try_from(opts);
-        // assert!(config.is_ok());
     }
 }
