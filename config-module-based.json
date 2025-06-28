@@ -1,0 +1,88 @@
+{
+  "project": {
+    "name": "my-react-native-modular-app",
+    "version": "2.0",
+    "structure": {
+      "application": {
+        "description": "Main application layer",
+        "children": {
+          "modules": {
+            "template": "templates/components.hbs",
+            "file_extension": "tsx"
+          },
+          "core": {
+            "template": "templates/default.hbs",
+            "file_extension": "ts"
+          },
+          "design-system": {
+            "template": "templates/components.hbs",
+            "file_extension": "tsx"
+          }
+        }
+      },
+      "modules": {
+        "description": "Business modules with full dynamic support",
+        "allow_dynamic_children": true,
+        "default_structure": {
+          "containers": {
+            "template": "templates/components.hbs",
+            "file_extension": "tsx"
+          },
+          "components": {
+            "template": "templates/components.hbs",
+            "file_extension": "tsx"
+          },
+          "services": {
+            "template": "templates/default.hbs",
+            "file_extension": "ts"
+          },
+          "types": {
+            "template": "templates/default.hbs",
+            "file_extension": "ts"
+          }
+        }
+      },
+      "shared": {
+        "description": "Shared utilities and components",
+        "children": {
+          "components": {
+            "template": "templates/components.hbs",
+            "file_extension": "tsx"
+          },
+          "hooks": {
+            "template": "templates/hooks.hbs",
+            "file_extension": "ts"
+          },
+          "utils": {
+            "template": "templates/default.hbs",
+            "file_extension": "ts"
+          },
+          "constants": {
+            "template": "templates/default.hbs",
+            "file_extension": "ts"
+          }
+        }
+      },
+      "external": {
+        "description": "External integrations and APIs",
+        "children": {
+          "apis": {
+            "template": "templates/default.hbs",
+            "file_extension": "ts"
+          },
+          "clients": {
+            "template": "templates/default.hbs",
+            "file_extension": "ts"
+          }
+        },
+        "allow_dynamic_children": true,
+        "default_structure": {
+          "client": {
+            "template": "templates/default.hbs",
+            "file_extension": "ts"
+          }
+        }
+      }
+    }
+  }
+}

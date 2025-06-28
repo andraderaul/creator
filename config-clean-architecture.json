@@ -1,0 +1,77 @@
+{
+  "project": {
+    "name": "my-react-native-clean-app",
+    "version": "2.0",
+    "structure": {
+      "infra": {
+        "description": "External configurations and integrations",
+        "children": {
+          "clients": {
+            "template": "templates/default.hbs",
+            "file_extension": "ts"
+          },
+          "providers": {
+            "template": "templates/default.hbs",
+            "file_extension": "ts"
+          },
+          "config": {
+            "template": "templates/default.hbs",
+            "file_extension": "ts"
+          }
+        }
+      },
+      "features": {
+        "description": "Business features with dynamic creation support",
+        "allow_dynamic_children": true,
+        "default_structure": {
+          "modules": {
+            "template": "templates/components.hbs",
+            "file_extension": "tsx"
+          },
+          "services": {
+            "template": "templates/default.hbs",
+            "file_extension": "ts"
+          },
+          "hooks": {
+            "template": "templates/hooks.hbs",
+            "file_extension": "ts"
+          }
+        }
+      },
+      "pages": {
+        "description": "Application pages/screens",
+        "children": {
+          "dashboard": {
+            "template": "templates/components.hbs",
+            "file_extension": "tsx"
+          },
+          "login": {
+            "template": "templates/components.hbs",
+            "file_extension": "tsx"
+          },
+          "profile": {
+            "template": "templates/components.hbs",
+            "file_extension": "tsx"
+          }
+        }
+      },
+      "core": {
+        "description": "Core utilities and shared code",
+        "children": {
+          "types": {
+            "template": "templates/default.hbs",
+            "file_extension": "ts"
+          },
+          "utils": {
+            "template": "templates/default.hbs",
+            "file_extension": "ts"
+          },
+          "hooks": {
+            "template": "templates/hooks.hbs",
+            "file_extension": "ts"
+          }
+        }
+      }
+    }
+  }
+}
