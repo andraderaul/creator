@@ -1,41 +1,39 @@
-use anyhow::Result;
 use clap::Parser;
-use creator::{
-    config::Config,
-    creator::Creator,
-    opts::{Commands, Opts},
-};
 
-fn main() -> Result<()> {
-    let config: Config = Opts::parse().try_into()?;
+use creator::app::{execute_config, Config};
+use creator::opts::Opts;
 
-    let creator = Creator::from_config(config.config, config.source_dir);
+fn main() -> anyhow::Result<()> {
+    println!("🚀 Creator v2.0 - Dynamic Configuration System");
 
-    match config.commands {
-        Commands::NewFeature { feature_name } => {
-            creator.create_feature("features", &feature_name)?;
+    let opts = Opts::parse();
 
-            println!("Feature '{}' created successfully!", feature_name);
-        }
-        Commands::NewCore {} => {
-            creator.create_core("core")?;
-
-            println!("Core created successfully!");
-        }
-        Commands::NewApplication {} => {
-            creator.create_application("application")?;
-
-            println!("Application created successfully!");
-        }
-
-        Commands::NewComponent { feature, name } => {
-            creator.create_component_module("features", &feature, "components", &name)?;
-
-            println!(
-                "Feature '{}' and Component '{}' created successfully!",
-                feature, name
+    // Try to load configuration with graceful error handling
+    let config = match Config::try_from(opts) {
+        Ok(config) => config,
+        Err(e) => {
+            eprintln!("❌ Configuration error: {}", e);
+            eprintln!();
+            eprintln!("💡 Quick start options:");
+            eprintln!(
+                "   creator init                    # Initialize with interactive preset selection"
             );
+            eprintln!("   creator init -p clean-architecture  # Use clean architecture preset");
+            eprintln!("   creator init -p module-based         # Use module-based preset");
+            eprintln!(
+                "   creator list                    # List available structure (if config exists)"
+            );
+            eprintln!();
+            eprintln!("📖 For more help: creator --help");
+
+            std::process::exit(1);
         }
+    };
+
+    // Execute the configuration
+    if let Err(e) = execute_config(config) {
+        eprintln!("❌ Execution error: {}", e);
+        std::process::exit(1);
     }
 
     Ok(())

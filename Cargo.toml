@@ -14,6 +14,8 @@ anyhow = "1.0"
 clap = { version = "4.5.2", features = ["derive"] }
 handlebars = "5.1.0"
 
+[dev-dependencies]
+tempfile = "3.8"
 
 [lib]
 name = "creator"

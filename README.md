@@ -1,4 +1,4 @@
-# Creator
+# Creator v2.0 🚀
 
 [![Code Quality](https://github.com/andraderaul/creator/actions/workflows/quality.yml/badge.svg)](https://github.com/andraderaul/creator/actions/workflows/quality.yml) [![Release](https://github.com/andraderaul/creator/actions/workflows/release.yml/badge.svg)](https://github.com/andraderaul/creator/actions/workflows/release.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
@@ -19,19 +19,24 @@
 
 ## Features
 
-This is the current roadmap for **Creator**:
+**Creator v2.0** is a complete architectural rewrite with powerful new capabilities:
 
-- [x] **Folder Structure Definition**: Define and customize your project's folder structure using a `config.json` file.
+- [x] **Dynamic Configuration System**: 100% configuration-driven CLI with no hardcoded commands
+- [x] **Flexible Project Structures**: Support for any project architecture via JSON configuration
+- [x] **Static & Dynamic Categories**: Create both predefined items and dynamic items at runtime
+- [x] **Interactive CLI**: Rich hierarchical navigation with helpful error messages
+- [x] **Template Engine**: Full Handlebars template support for consistent code generation
+- [x] **Auto-Discovery**: Automatic detection of config files and source directories
+- [x] **Preset System**: Ready-to-use presets for Clean Architecture and Module-based patterns
+- [x] **CLI Commands**: Modern command interface with `create`, `list`, and `init` commands
+- [x] **Performance Optimized**: <100ms startup time with efficient config parsing
+- [x] **Graceful Error Handling**: Helpful error messages with quick-fix suggestions
 
-- [x] **Source Directory Definition**: Define and customize where your project's folder structure will be created.
+### **Breaking Changes from v1**:
 
-- [x] **Generate Code Definition**: Generate code based on the config file.
-
-- [ ] **CLI Interface**: Use a simple and intuitive command-line interface to create:
-  - [x] new features
-  - [x] new core
-  - [x] new application
-  - [ ] new subdirectory based on the config file
+- ❌ Removed hardcoded commands (`new-feature`, `new-core`, etc.)
+- ✅ New dynamic system with unlimited configurability
+- ✅ Migration path available via `creator init` command
 
 ## Downloading Artifacts
 
