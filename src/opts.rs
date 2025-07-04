@@ -28,11 +28,7 @@ pub enum Commands {
 
     #[clap(about = "List available modules and items from config")]
     List {
-        #[clap(
-            short = 'm',
-            long = "module",
-            help = "Show items for specific module"
-        )]
+        #[clap(short = 'm', long = "module", help = "Show items for specific module")]
         category: Option<String>,
     },
 
@@ -42,5 +38,3 @@ pub enum Commands {
         preset: Option<String>,
     },
 }
-
-

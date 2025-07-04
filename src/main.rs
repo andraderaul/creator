@@ -18,7 +18,9 @@ fn main() -> anyhow::Result<()> {
             eprintln!(
                 "   creator init                              # Initialize with interactive preset selection"
             );
-            eprintln!("   creator init -p clean-architecture        # Use clean architecture preset");
+            eprintln!(
+                "   creator init -p clean-architecture        # Use clean architecture preset"
+            );
             eprintln!("   creator init -p module-based              # Use module-based preset");
             eprintln!(
                 "   creator create cats/components/cat-list   # Create item in cohesive module structure"

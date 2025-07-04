@@ -3,7 +3,7 @@ use inquire::{validator::Validation, Select, Text};
 use std::path::PathBuf;
 
 use crate::config::ProjectConfig;
-use crate::file_utils::{generate_template_name, to_kebab_case, is_valid_name};
+use crate::file_utils::{generate_template_name, is_valid_name, to_kebab_case};
 use crate::generator::Generator;
 use crate::opts::Commands;
 
@@ -66,7 +66,7 @@ impl CliEngine {
 
         // Step 2: Collect all available item types from all categories
         let mut all_item_types = Vec::new();
-        
+
         for category_name in self.config.get_categories() {
             if let Some(category) = self.config.get_category(&category_name) {
                 // Add static items
@@ -74,7 +74,7 @@ impl CliEngine {
                 for item in static_items {
                     all_item_types.push(format!("{} ({})", item, category_name));
                 }
-                
+
                 // Add dynamic items
                 if category.supports_dynamic_children() {
                     if let Some(default_structure) = category.get_default_structure() {
@@ -109,8 +109,14 @@ impl CliEngine {
             .with_validator(|input: &str| {
                 if input.trim().is_empty() {
                     Ok(Validation::Invalid("Item name cannot be empty".into()))
-                } else if input.chars().any(|c| !c.is_alphanumeric() && c != '_' && c != '-') {
-                    Ok(Validation::Invalid("Item name can only contain alphanumeric characters, underscore, and dash".into()))
+                } else if input
+                    .chars()
+                    .any(|c| !c.is_alphanumeric() && c != '_' && c != '-')
+                {
+                    Ok(Validation::Invalid(
+                        "Item name can only contain alphanumeric characters, underscore, and dash"
+                            .into(),
+                    ))
                 } else {
                     Ok(Validation::Valid)
                 }
@@ -131,7 +137,7 @@ impl CliEngine {
     pub fn handle_create(&self, cmd: Commands) -> Result<()> {
         if let Commands::Create { path } = cmd {
             println!("🏗️  Creating item from path: {}", path);
-            
+
             // Parse path: module/item_type/name
             let parts: Vec<&str> = path.split('/').collect();
             if parts.len() != 3 {
@@ -146,11 +152,17 @@ impl CliEngine {
             let third_part = parts[2];
 
             // Check if first part is a static category
-            let (category_name, category, module_name, item_type, item_name) = 
+            let (category_name, category, module_name, item_type, item_name) =
                 if let Some(category) = self.config.get_category(first_part) {
                     if !category.supports_dynamic_children() {
                         // Static category: category/item_type/item_name
-                        (first_part.to_string(), category, first_part, second_part, third_part)
+                        (
+                            first_part.to_string(),
+                            category,
+                            first_part,
+                            second_part,
+                            third_part,
+                        )
                     } else {
                         // Dynamic category specified: treat as module_name/item_type/item_name
                         let item_type = second_part;
@@ -171,7 +183,7 @@ impl CliEngine {
                     module_name
                 ));
             }
-            
+
             if !is_valid_name(item_name) {
                 return Err(anyhow!(
                     "Invalid item name '{}'. Use only letters, numbers, hyphens, and underscores.",
@@ -184,7 +196,10 @@ impl CliEngine {
                 static_item
             } else if category.supports_dynamic_children() {
                 let default_structure = category.get_default_structure().ok_or_else(|| {
-                    anyhow!("Category '{}' supports dynamic children but has no default structure", category_name)
+                    anyhow!(
+                        "Category '{}' supports dynamic children but has no default structure",
+                        category_name
+                    )
                 })?;
 
                 default_structure.get(item_type).ok_or_else(|| {
@@ -201,10 +216,21 @@ impl CliEngine {
             // Create the item using the appropriate structure
             if category.supports_dynamic_children() {
                 // Dynamic category: category/module_name/item_type/item_name.ext
-                self.create_cohesive_module_item(&category_name, module_name, item_type, item_name, item_config)?;
+                self.create_cohesive_module_item(
+                    &category_name,
+                    module_name,
+                    item_type,
+                    item_name,
+                    item_config,
+                )?;
             } else {
                 // Static category: category/item_type/item_name.ext
-                self.create_static_category_item(&category_name, item_type, item_name, item_config)?;
+                self.create_static_category_item(
+                    &category_name,
+                    item_type,
+                    item_name,
+                    item_config,
+                )?;
             }
 
             println!(
@@ -234,8 +260,6 @@ impl CliEngine {
 
         Ok(())
     }
-
-
 
     /// List all available categories
     fn list_all_categories(&self) -> Result<()> {
@@ -317,8 +341,6 @@ impl CliEngine {
         Ok(())
     }
 
-
-
     /// Create item in cohesive module structure: category/module_name/item_type/item_name.ext
     fn create_cohesive_module_item(
         &self,
@@ -364,10 +386,7 @@ impl CliEngine {
         use crate::file_utils::{create_file, create_folder};
 
         // Build path: source_dir/category/item_type/
-        let item_path = self
-            .source_dir
-            .join(category)
-            .join(item_type);
+        let item_path = self.source_dir.join(category).join(item_type);
 
         // Create folder structure
         create_folder(&item_path)?;
@@ -386,7 +405,10 @@ impl CliEngine {
     }
 
     /// Find category that contains the specified item type
-    fn find_category_for_item_type(&self, item_type: &str) -> Result<(String, &crate::config::Category)> {
+    fn find_category_for_item_type(
+        &self,
+        item_type: &str,
+    ) -> Result<(String, &crate::config::Category)> {
         // First, check dynamic categories (they have priority for cohesive modules)
         for category_name in self.config.get_categories() {
             if let Some(category) = self.config.get_category(&category_name) {
@@ -399,7 +421,7 @@ impl CliEngine {
                 }
             }
         }
-        
+
         // Then check static categories
         for category_name in self.config.get_categories() {
             if let Some(category) = self.config.get_category(&category_name) {
@@ -407,7 +429,7 @@ impl CliEngine {
                 if category.supports_dynamic_children() {
                     continue;
                 }
-                
+
                 // Check static items
                 if category.get_item(item_type).is_some() {
                     return Ok((category_name, category));
@@ -423,7 +445,7 @@ impl CliEngine {
                 for item in static_items {
                     available_types.push(format!("{} (in {})", item, category_name));
                 }
-                
+
                 if category.supports_dynamic_children() {
                     if let Some(default_structure) = category.get_default_structure() {
                         for item in default_structure.keys() {
@@ -445,37 +467,48 @@ impl CliEngine {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::config::{Category, Item, ProjectInfo};
     use std::collections::HashMap;
     use tempfile::TempDir;
-    use crate::config::{Category, Item, ProjectInfo};
-
-
 
     fn create_test_engine() -> (CliEngine, TempDir) {
         create_test_engine_with_prefix("test")
     }
 
     fn create_test_engine_with_prefix(prefix: &str) -> (CliEngine, TempDir) {
-        use std::time::{SystemTime, UNIX_EPOCH};
         use std::thread;
-        
-        let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
-        let thread_id = format!("{:?}", thread::current().id()).replace("ThreadId(", "").replace(")", "");
+        use std::time::{SystemTime, UNIX_EPOCH};
+
+        let timestamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let thread_id = format!("{:?}", thread::current().id())
+            .replace("ThreadId(", "")
+            .replace(")", "");
         let unique_prefix = format!("{}_{}_{}", prefix, timestamp, thread_id);
         let temp_dir = TempDir::with_prefix(&unique_prefix).unwrap();
-        
+
         // Create template files
         std::fs::create_dir_all(temp_dir.path().join("templates")).unwrap();
-        
+
         let components_template = "import React from 'react';\n\nexport function {{templateName}}() {\n  return <div>{{templateName}}</div>;\n}";
-        std::fs::write(temp_dir.path().join("templates/components.hbs"), components_template).unwrap();
-        
+        std::fs::write(
+            temp_dir.path().join("templates/components.hbs"),
+            components_template,
+        )
+        .unwrap();
+
         let default_template = "export function {{templateName}}() {\n  return {};\n}";
-        std::fs::write(temp_dir.path().join("templates/default.hbs"), default_template).unwrap();
-        
+        std::fs::write(
+            temp_dir.path().join("templates/default.hbs"),
+            default_template,
+        )
+        .unwrap();
+
         let hooks_template = "import { useState } from 'react';\n\nexport function use{{templateName}}() {\n  return {};\n}";
         std::fs::write(temp_dir.path().join("templates/hooks.hbs"), hooks_template).unwrap();
-        
+
         let config = create_test_config_with_temp_dir(temp_dir.path());
         let engine = CliEngine::new(config, temp_dir.path().to_path_buf());
         (engine, temp_dir)
@@ -484,66 +517,117 @@ mod tests {
     fn create_test_config_with_temp_dir(temp_dir: &std::path::Path) -> ProjectConfig {
         // Create a test config with both dynamic and static categories
         let mut categories = HashMap::new();
-        
+
         // Dynamic category (modules)
         let mut modules_default = HashMap::new();
-        modules_default.insert("components".to_string(), Item {
-            template: temp_dir.join("templates/components.hbs").to_string_lossy().to_string(),
-            file_extension: "tsx".to_string(),
-        });
-        modules_default.insert("services".to_string(), Item {
-            template: temp_dir.join("templates/default.hbs").to_string_lossy().to_string(),
-            file_extension: "ts".to_string(),
-        });
-        modules_default.insert("hooks".to_string(), Item {
-            template: temp_dir.join("templates/hooks.hbs").to_string_lossy().to_string(),
-            file_extension: "ts".to_string(),
-        });
+        modules_default.insert(
+            "components".to_string(),
+            Item {
+                template: temp_dir
+                    .join("templates/components.hbs")
+                    .to_string_lossy()
+                    .to_string(),
+                file_extension: "tsx".to_string(),
+            },
+        );
+        modules_default.insert(
+            "services".to_string(),
+            Item {
+                template: temp_dir
+                    .join("templates/default.hbs")
+                    .to_string_lossy()
+                    .to_string(),
+                file_extension: "ts".to_string(),
+            },
+        );
+        modules_default.insert(
+            "hooks".to_string(),
+            Item {
+                template: temp_dir
+                    .join("templates/hooks.hbs")
+                    .to_string_lossy()
+                    .to_string(),
+                file_extension: "ts".to_string(),
+            },
+        );
 
-        categories.insert("modules".to_string(), Category {
-            description: Some("Dynamic modules".to_string()),
-            children: None,
-            allow_dynamic_children: Some(true),
-            default_structure: Some(modules_default),
-        });
+        categories.insert(
+            "modules".to_string(),
+            Category {
+                description: Some("Dynamic modules".to_string()),
+                children: None,
+                allow_dynamic_children: Some(true),
+                default_structure: Some(modules_default),
+            },
+        );
 
         // Static category (pages)
         let mut pages_children = HashMap::new();
-        pages_children.insert("dashboard".to_string(), Item {
-            template: temp_dir.join("templates/components.hbs").to_string_lossy().to_string(),
-            file_extension: "tsx".to_string(),
-        });
-        pages_children.insert("login".to_string(), Item {
-            template: temp_dir.join("templates/components.hbs").to_string_lossy().to_string(),
-            file_extension: "tsx".to_string(),
-        });
+        pages_children.insert(
+            "dashboard".to_string(),
+            Item {
+                template: temp_dir
+                    .join("templates/components.hbs")
+                    .to_string_lossy()
+                    .to_string(),
+                file_extension: "tsx".to_string(),
+            },
+        );
+        pages_children.insert(
+            "login".to_string(),
+            Item {
+                template: temp_dir
+                    .join("templates/components.hbs")
+                    .to_string_lossy()
+                    .to_string(),
+                file_extension: "tsx".to_string(),
+            },
+        );
 
-        categories.insert("pages".to_string(), Category {
-            description: Some("Static pages".to_string()),
-            children: Some(pages_children),
-            allow_dynamic_children: None,
-            default_structure: None,
-        });
+        categories.insert(
+            "pages".to_string(),
+            Category {
+                description: Some("Static pages".to_string()),
+                children: Some(pages_children),
+                allow_dynamic_children: None,
+                default_structure: None,
+            },
+        );
 
         // Mixed category (features) - has both static and dynamic
         let mut features_children = HashMap::new();
-        features_children.insert("auth".to_string(), Item {
-            template: temp_dir.join("templates/default.hbs").to_string_lossy().to_string(),
-            file_extension: "ts".to_string(),
-        });
+        features_children.insert(
+            "auth".to_string(),
+            Item {
+                template: temp_dir
+                    .join("templates/default.hbs")
+                    .to_string_lossy()
+                    .to_string(),
+                file_extension: "ts".to_string(),
+            },
+        );
 
         let mut features_default = HashMap::new();
-        features_default.insert("components".to_string(), Item {
-            template: temp_dir.join("templates/components.hbs").to_string_lossy().to_string(),
-            file_extension: "tsx".to_string(),
-        });
+        features_default.insert(
+            "components".to_string(),
+            Item {
+                template: temp_dir
+                    .join("templates/components.hbs")
+                    .to_string_lossy()
+                    .to_string(),
+                file_extension: "tsx".to_string(),
+            },
+        );
 
-        categories.insert("features".to_string(), Category {
-            description: Some("Mixed features".to_string()),
-            children: Some(features_children),
-            allow_dynamic_children: Some(true),
-            default_structure: Some(features_default),
-        });
+        categories.insert(
+            "features".to_string(),
+            Category {
+                description: Some("Mixed features".to_string()),
+                children: Some(features_children),
+                allow_dynamic_children: Some(true),
+                default_structure: Some(features_default),
+            },
+        );
 
         ProjectConfig {
             project: ProjectInfo {
@@ -562,7 +646,7 @@ mod tests {
         // but the important thing is that it finds it in a dynamic category
         let result = engine.find_category_for_item_type("components").unwrap();
         assert!(result.1.supports_dynamic_children());
-        
+
         // Should find in either "modules" or "features", both are dynamic
         assert!(result.0 == "modules" || result.0 == "features");
     }
@@ -584,11 +668,11 @@ mod tests {
         // Should find dynamic items first - components exists in both modules and features
         let result = engine.find_category_for_item_type("components").unwrap();
         assert!(result.1.supports_dynamic_children());
-        
+
         // Should find static items - auth only exists as static in features
         // But the current logic prioritizes dynamic over static, so let's test what actually happens
         let result = engine.find_category_for_item_type("auth");
-        // auth is static in features, but since the logic checks dynamic first, 
+        // auth is static in features, but since the logic checks dynamic first,
         // and features has dynamic support, it might not find auth
         if result.is_ok() {
             assert_eq!(result.unwrap().0, "features");
@@ -615,12 +699,15 @@ mod tests {
         let (engine, temp_dir) = create_test_engine_with_prefix("valid_formats");
 
         // Test valid module/item_type/name format
-        let cmd = Commands::Create { path: "users/components/user-profile".to_string() };
+        let cmd = Commands::Create {
+            path: "users/components/user-profile".to_string(),
+        };
         let result = engine.handle_create(cmd);
         assert!(result.is_ok());
 
         // Check that file was created in correct location
-        let expected_path = temp_dir.path()
+        let expected_path = temp_dir
+            .path()
             .join("modules")
             .join("users")
             .join("components")
@@ -634,12 +721,15 @@ mod tests {
         let (engine, temp_dir) = create_test_engine_with_prefix("static_category");
 
         // Test static category format: category/item_type/name
-        let cmd = Commands::Create { path: "pages/dashboard/main-dashboard".to_string() };
+        let cmd = Commands::Create {
+            path: "pages/dashboard/main-dashboard".to_string(),
+        };
         let result = engine.handle_create(cmd);
         assert!(result.is_ok());
 
         // Check that file was created in static category structure
-        let expected_path = temp_dir.path()
+        let expected_path = temp_dir
+            .path()
             .join("pages")
             .join("dashboard")
             .join("main-dashboard.tsx");
@@ -653,14 +743,16 @@ mod tests {
 
         // Test invalid path formats
         let invalid_paths = vec![
-            "users/components", // Too few parts
+            "users/components",               // Too few parts
             "users/components/profile/extra", // Too many parts
-            "users", // Single part
-            "", // Empty
+            "users",                          // Single part
+            "",                               // Empty
         ];
 
         for path in invalid_paths {
-            let cmd = Commands::Create { path: path.to_string() };
+            let cmd = Commands::Create {
+                path: path.to_string(),
+            };
             let result = engine.handle_create(cmd);
             assert!(result.is_err());
             let error_msg = result.unwrap_err().to_string();
@@ -678,12 +770,12 @@ mod tests {
             "user profile", // Space
             "user@profile", // Special char
             "user.profile", // Dot
-            "",            // Empty
+            "",             // Empty
         ];
 
         for invalid_name in invalid_module_names {
-            let cmd = Commands::Create { 
-                path: format!("{}/components/test", invalid_name) 
+            let cmd = Commands::Create {
+                path: format!("{}/components/test", invalid_name),
             };
             let result = engine.handle_create(cmd);
             assert!(result.is_err());
@@ -696,12 +788,12 @@ mod tests {
             "user profile", // Space
             "user@profile", // Special char
             "user.profile", // Dot
-            "",            // Empty
+            "",             // Empty
         ];
 
         for invalid_name in invalid_item_names {
-            let cmd = Commands::Create { 
-                path: format!("users/components/{}", invalid_name) 
+            let cmd = Commands::Create {
+                path: format!("users/components/{}", invalid_name),
             };
             let result = engine.handle_create(cmd);
             assert!(result.is_err());
@@ -715,7 +807,9 @@ mod tests {
         use crate::opts::Commands;
         let (engine, _temp_dir) = create_test_engine();
 
-        let cmd = Commands::Create { path: "users/unknown-type/test".to_string() };
+        let cmd = Commands::Create {
+            path: "users/unknown-type/test".to_string(),
+        };
         let result = engine.handle_create(cmd);
         assert!(result.is_err());
         let error_msg = result.unwrap_err().to_string();
@@ -733,20 +827,25 @@ mod tests {
             "components",
             "LoginForm",
             &Item {
-                template: temp_dir.path().join("templates/components.hbs").to_string_lossy().to_string(),
+                template: temp_dir
+                    .path()
+                    .join("templates/components.hbs")
+                    .to_string_lossy()
+                    .to_string(),
                 file_extension: "tsx".to_string(),
             },
         );
-        
+
         assert!(result.is_ok());
 
         // Check kebab-case conversion in path (note: to_kebab_case doesn't convert camelCase)
-        let expected_path = temp_dir.path()
+        let expected_path = temp_dir
+            .path()
             .join("modules")
-            .join("userauth")  // "UserAuth" -> "userauth"
+            .join("userauth") // "UserAuth" -> "userauth"
             .join("components")
-            .join("loginform.tsx");  // "LoginForm" -> "loginform"
-        
+            .join("loginform.tsx"); // "LoginForm" -> "loginform"
+
         assert!(expected_path.exists());
     }
 
@@ -767,10 +866,11 @@ mod tests {
         assert!(result.is_ok());
 
         // Check kebab-case conversion in path (note: to_kebab_case doesn't convert camelCase)
-        let expected_path = temp_dir.path()
+        let expected_path = temp_dir
+            .path()
             .join("pages")
             .join("dashboard")
-            .join("userdashboard.tsx");  // "UserDashboard" -> "userdashboard"
+            .join("userdashboard.tsx"); // "UserDashboard" -> "userdashboard"
         assert!(expected_path.exists());
     }
 
@@ -780,9 +880,9 @@ mod tests {
 
         // Test various name formats converted by to_kebab_case (note: doesn't handle camelCase)
         let test_cases = vec![
-            ("CamelCase", "camelcase"),        // camelCase not handled
-            ("snake_case", "snake-case"),      // underscores converted
-            ("PascalCase", "pascalcase"),      // PascalCase not handled
+            ("CamelCase", "camelcase"),         // camelCase not handled
+            ("snake_case", "snake-case"),       // underscores converted
+            ("PascalCase", "pascalcase"),       // PascalCase not handled
             ("already-kebab", "already-kebab"), // already correct
             ("mixed_Case", "mixed-case"),       // only underscores converted
         ];
@@ -800,12 +900,17 @@ mod tests {
             );
             assert!(result.is_ok());
 
-            let expected_path = temp_dir.path()
+            let expected_path = temp_dir
+                .path()
                 .join("modules")
                 .join(expected)
                 .join("components")
                 .join(format!("{}.tsx", expected));
-            assert!(expected_path.exists(), "Path should exist for input: {}", input);
+            assert!(
+                expected_path.exists(),
+                "Path should exist for input: {}",
+                input
+            );
         }
     }
 
@@ -815,12 +920,15 @@ mod tests {
         let (engine, temp_dir) = create_test_engine_with_prefix("end_to_end");
 
         // Test complete workflow: parse -> validate -> create
-        let cmd = Commands::Create { path: "user-management/services/auth-service".to_string() };
+        let cmd = Commands::Create {
+            path: "user-management/services/auth-service".to_string(),
+        };
         let result = engine.handle_create(cmd);
         assert!(result.is_ok());
 
         // Verify file structure
-        let expected_path = temp_dir.path()
+        let expected_path = temp_dir
+            .path()
             .join("modules")
             .join("user-management")
             .join("services")
@@ -849,12 +957,16 @@ mod tests {
         use crate::opts::Commands;
         let (engine, _temp_dir) = create_test_engine();
 
-        let cmd = Commands::List { category: Some("modules".to_string()) };
+        let cmd = Commands::List {
+            category: Some("modules".to_string()),
+        };
         let result = engine.handle_list(cmd);
         assert!(result.is_ok());
 
         // Test with non-existent category
-        let cmd = Commands::List { category: Some("nonexistent".to_string()) };
+        let cmd = Commands::List {
+            category: Some("nonexistent".to_string()),
+        };
         let result = engine.handle_list(cmd);
         assert!(result.is_err());
         assert!(result.unwrap_err().to_string().contains("not found"));
@@ -867,29 +979,54 @@ mod tests {
 
         // Test 1: Create a focused set of representative items
         let test_cases = vec![
-            ("users/components/user-list", "modules/users/components/user-list.tsx"),
-            ("users/services/user-api", "modules/users/services/user-api.ts"),
+            (
+                "users/components/user-list",
+                "modules/users/components/user-list.tsx",
+            ),
+            (
+                "users/services/user-api",
+                "modules/users/services/user-api.ts",
+            ),
             ("pages/dashboard/main", "pages/dashboard/main.tsx"),
         ];
 
         for (input_path, expected_file_path) in test_cases {
-            let cmd = Commands::Create { path: input_path.to_string() };
+            let cmd = Commands::Create {
+                path: input_path.to_string(),
+            };
             let result = engine.handle_create(cmd);
-            assert!(result.is_ok(), "Failed to create {}: {:?}", input_path, result.err());
+            assert!(
+                result.is_ok(),
+                "Failed to create {}: {:?}",
+                input_path,
+                result.err()
+            );
 
             let expected_path = temp_dir.path().join(expected_file_path);
-            assert!(expected_path.exists(), "Expected file not created: {:?}", expected_path);
+            assert!(
+                expected_path.exists(),
+                "Expected file not created: {:?}",
+                expected_path
+            );
 
             // Verify file content is not empty and contains template replacement
             let content = std::fs::read_to_string(&expected_path).unwrap();
-            assert!(!content.is_empty(), "Generated file is empty: {:?}", expected_path);
-            assert!(content.contains("function"), "Generated file doesn't contain function: {:?}", expected_path);
+            assert!(
+                !content.is_empty(),
+                "Generated file is empty: {:?}",
+                expected_path
+            );
+            assert!(
+                content.contains("function"),
+                "Generated file doesn't contain function: {:?}",
+                expected_path
+            );
         }
 
         // Test 2: Verify directory structure is correct
         let modules_dir = temp_dir.path().join("modules");
         assert!(modules_dir.exists());
-        
+
         let users_dir = modules_dir.join("users");
         assert!(users_dir.exists());
         assert!(users_dir.join("components").exists());
@@ -900,14 +1037,25 @@ mod tests {
         assert!(pages_dir.join("dashboard").exists());
 
         // Test 3: Verify template content is properly generated
-        let user_list_file = temp_dir.path().join("modules/users/components/user-list.tsx");
+        let user_list_file = temp_dir
+            .path()
+            .join("modules/users/components/user-list.tsx");
         let content = std::fs::read_to_string(user_list_file).unwrap();
-        assert!(content.contains("UserList"), "Template name not replaced correctly");
-        assert!(content.contains("import React"), "Template content not loaded correctly");
+        assert!(
+            content.contains("UserList"),
+            "Template name not replaced correctly"
+        );
+        assert!(
+            content.contains("import React"),
+            "Template content not loaded correctly"
+        );
 
         let user_api_file = temp_dir.path().join("modules/users/services/user-api.ts");
         let content = std::fs::read_to_string(user_api_file).unwrap();
-        assert!(content.contains("UserApiService"), "Service suffix not added correctly");
+        assert!(
+            content.contains("UserApiService"),
+            "Service suffix not added correctly"
+        );
 
         // Test 4: Test error cases work correctly
         let invalid_cases = vec![
@@ -919,9 +1067,15 @@ mod tests {
         ];
 
         for invalid_path in invalid_cases {
-            let cmd = Commands::Create { path: invalid_path.to_string() };
+            let cmd = Commands::Create {
+                path: invalid_path.to_string(),
+            };
             let result = engine.handle_create(cmd);
-            assert!(result.is_err(), "Expected error for invalid path: {}", invalid_path);
+            assert!(
+                result.is_err(),
+                "Expected error for invalid path: {}",
+                invalid_path
+            );
         }
 
         println!("✅ End-to-end smoke test passed - all workflows functioning correctly");

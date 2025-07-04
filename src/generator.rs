@@ -52,13 +52,13 @@ mod tests {
     fn test_generate_with_valid_template() {
         let temp_dir = TempDir::new().unwrap();
         let template_path = temp_dir.path().join("test_template.hbs");
-        
+
         // Create a simple template
         let template_content = "import React from 'react';\n\nexport function {{templateName}}() {\n  return <div>{{templateName}}</div>;\n}";
         fs::write(&template_path, template_content).unwrap();
 
         let result = Generator::generate(&template_path, "UserProfile".to_string()).unwrap();
-        
+
         assert!(result.contains("export function UserProfile()"));
         assert!(result.contains("return <div>UserProfile</div>"));
         assert!(result.contains("import React from 'react'"));
@@ -68,13 +68,13 @@ mod tests {
     fn test_generate_with_hooks_template() {
         let temp_dir = TempDir::new().unwrap();
         let template_path = temp_dir.path().join("hooks_template.hbs");
-        
+
         // Simulate hooks template pattern
         let template_content = "import { useState, useEffect } from 'react';\n\nexport function use{{templateName}}() {\n  return {};\n}";
         fs::write(&template_path, template_content).unwrap();
 
         let result = Generator::generate(&template_path, "UserData".to_string()).unwrap();
-        
+
         assert!(result.contains("export function useUserData()"));
         assert!(result.contains("import { useState, useEffect }"));
     }
@@ -82,9 +82,9 @@ mod tests {
     #[test]
     fn test_generate_with_nonexistent_template() {
         let nonexistent_path = PathBuf::from("/nonexistent/template.hbs");
-        
+
         let result = Generator::generate(&nonexistent_path, "TestComponent".to_string()).unwrap();
-        
+
         // Should fallback to default template
         assert_eq!(result, "export function TestComponent(){}");
     }
@@ -93,28 +93,32 @@ mod tests {
     fn test_generate_with_invalid_handlebars_template() {
         let temp_dir = TempDir::new().unwrap();
         let template_path = temp_dir.path().join("invalid_template.hbs");
-        
+
         // Create invalid handlebars syntax
-        let invalid_template = "export function {{templateName}() { // Missing closing brace in handlebars";
+        let invalid_template =
+            "export function {{templateName}() { // Missing closing brace in handlebars";
         fs::write(&template_path, invalid_template).unwrap();
 
         let result = Generator::generate(&template_path, "TestComponent".to_string());
-        
+
         // Should return error for invalid template syntax
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("Cannot register template string"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Cannot register template string"));
     }
 
     #[test]
     fn test_generate_with_empty_name() {
         let temp_dir = TempDir::new().unwrap();
         let template_path = temp_dir.path().join("test_template.hbs");
-        
+
         let template_content = "export function {{templateName}}() {}";
         fs::write(&template_path, template_content).unwrap();
 
         let result = Generator::generate(&template_path, "".to_string()).unwrap();
-        
+
         // Should handle empty name gracefully
         assert_eq!(result, "export function () {}");
     }
@@ -123,12 +127,13 @@ mod tests {
     fn test_generate_with_special_characters_in_name() {
         let temp_dir = TempDir::new().unwrap();
         let template_path = temp_dir.path().join("test_template.hbs");
-        
+
         let template_content = "export function {{templateName}}() {}";
         fs::write(&template_path, template_content).unwrap();
 
-        let result = Generator::generate(&template_path, "User-Profile_Component".to_string()).unwrap();
-        
+        let result =
+            Generator::generate(&template_path, "User-Profile_Component".to_string()).unwrap();
+
         // Should preserve the exact name passed
         assert_eq!(result, "export function User-Profile_Component() {}");
     }
@@ -137,12 +142,12 @@ mod tests {
     fn test_generate_with_unicode_name() {
         let temp_dir = TempDir::new().unwrap();
         let template_path = temp_dir.path().join("test_template.hbs");
-        
+
         let template_content = "export function {{templateName}}() {}";
         fs::write(&template_path, template_content).unwrap();
 
         let result = Generator::generate(&template_path, "Usuário".to_string()).unwrap();
-        
+
         // Should handle unicode characters
         assert_eq!(result, "export function Usuário() {}");
     }
@@ -151,7 +156,7 @@ mod tests {
     fn test_generate_with_complex_template() {
         let temp_dir = TempDir::new().unwrap();
         let template_path = temp_dir.path().join("complex_template.hbs");
-        
+
         let template_content = r#"import React, { useState, useEffect } from 'react';
 
 interface {{templateName}}Props {
@@ -173,11 +178,11 @@ export const {{templateName}}: React.FC<{{templateName}}Props> = ({ id }) => {
 };
 
 export default {{templateName}};"#;
-        
+
         fs::write(&template_path, template_content).unwrap();
 
         let result = Generator::generate(&template_path, "UserDashboard".to_string()).unwrap();
-        
+
         // Verify multiple template replacements
         assert!(result.contains("interface UserDashboardProps"));
         assert!(result.contains("export const UserDashboard: React.FC<UserDashboardProps>"));
@@ -191,13 +196,14 @@ export default {{templateName}};"#;
     fn test_generate_handlebars_escaping() {
         let temp_dir = TempDir::new().unwrap();
         let template_path = temp_dir.path().join("escape_template.hbs");
-        
+
         // Template with special characters
-        let template_content = "export const {{templateName}} = () => '<div>{{templateName}}</div>';";
+        let template_content =
+            "export const {{templateName}} = () => '<div>{{templateName}}</div>';";
         fs::write(&template_path, template_content).unwrap();
 
         let result = Generator::generate(&template_path, "Test<script>".to_string()).unwrap();
-        
+
         // Handlebars escapes HTML by default for security
         assert!(result.contains("Test&lt;script&gt;"));
         assert!(result.contains("export const Test&lt;script&gt; = ()"));
