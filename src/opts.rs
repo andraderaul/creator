@@ -43,28 +43,4 @@ pub enum Commands {
     },
 }
 
-impl Commands {
-    /// Get the primary action for this command
-    pub fn action(&self) -> &'static str {
-        match self {
-            Commands::Create { .. } => "create",
-            Commands::List { .. } => "list",
-            Commands::Init { .. } => "init",
-        }
-    }
 
-    /// Check if this is a create command
-    pub fn is_create(&self) -> bool {
-        matches!(self, Commands::Create { .. })
-    }
-
-    /// Check if this is a list command
-    pub fn is_list(&self) -> bool {
-        matches!(self, Commands::List { .. })
-    }
-
-    /// Check if this is an init command
-    pub fn is_init(&self) -> bool {
-        matches!(self, Commands::Init { .. })
-    }
-}

@@ -3,7 +3,7 @@ use inquire::{validator::Validation, Select, Text};
 use std::path::PathBuf;
 
 use crate::config::ProjectConfig;
-use crate::file_utils::{generate_template_name, to_kebab_case, to_pascal_case, is_valid_name};
+use crate::file_utils::{generate_template_name, to_kebab_case, is_valid_name};
 use crate::generator::Generator;
 use crate::opts::Commands;
 
@@ -328,8 +328,7 @@ impl CliEngine {
         item_name: &str,
         item_config: &crate::config::Item,
     ) -> Result<()> {
-        use crate::file_utils::{create_file, create_folder, to_kebab_case, generate_template_name};
-        use crate::generator::Generator;
+        use crate::file_utils::{create_file, create_folder};
 
         // Build path: source_dir/category/module_name/item_type/
         let item_path = self
@@ -362,8 +361,7 @@ impl CliEngine {
         item_name: &str,
         item_config: &crate::config::Item,
     ) -> Result<()> {
-        use crate::file_utils::{create_file, create_folder, to_kebab_case, generate_template_name};
-        use crate::generator::Generator;
+        use crate::file_utils::{create_file, create_folder};
 
         // Build path: source_dir/category/item_type/
         let item_path = self
