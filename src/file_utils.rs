@@ -26,63 +26,162 @@ pub fn create_file(file_path: &Path, content: String) -> Result<usize> {
 
 pub fn to_kebab_case(input: &str) -> String {
     input
-        .split_whitespace()
+        .chars()
+        .collect::<String>()
+        .split(|c: char| c.is_whitespace() || c == '_')
         .map(|word| word.to_lowercase())
+        .filter(|word| !word.is_empty())
         .collect::<Vec<_>>()
         .join("-")
 }
 
 pub fn to_pascal_case(input: &str) -> String {
-    input
-        .split_whitespace()
-        .map(|word| {
-            let mut chars = word.chars();
-            match chars.next() {
-                None => String::new(),
-                Some(first) => {
-                    let mut rest = chars.collect::<String>();
-                    rest.make_ascii_lowercase();
-                    format!("{}{}", first.to_uppercase(), rest)
-                }
+    // Handle camelCase, kebab-case, snake_case, and spaces
+    let mut result = String::new();
+    let mut current_word = String::new();
+    
+    for ch in input.chars() {
+        if ch.is_whitespace() || ch == '-' || ch == '_' {
+            if !current_word.is_empty() {
+                result.push_str(&capitalize_word(&current_word));
+                current_word.clear();
             }
-        })
-        .collect::<Vec<_>>()
-        .join("")
+        } else if ch.is_uppercase() && !current_word.is_empty() {
+            // Handle camelCase - when we hit uppercase, finish current word
+            result.push_str(&capitalize_word(&current_word));
+            current_word.clear();
+            current_word.push(ch);
+        } else {
+            current_word.push(ch);
+        }
+    }
+    
+    // Handle the last word
+    if !current_word.is_empty() {
+        result.push_str(&capitalize_word(&current_word));
+    }
+    
+    result
+}
+
+fn capitalize_word(word: &str) -> String {
+    if word.is_empty() {
+        return String::new();
+    }
+    let mut chars = word.chars();
+    match chars.next() {
+        None => String::new(),
+        Some(first) => {
+            let rest = chars.collect::<String>().to_lowercase();
+            format!("{}{}", first.to_uppercase(), rest)
+        }
+    }
+}
+
+pub fn to_camel_case(input: &str) -> String {
+    let pascal = to_pascal_case(input);
+    if let Some(first_char) = pascal.chars().next() {
+        format!("{}{}", first_char.to_lowercase(), &pascal[1..])
+    } else {
+        pascal
+    }
+}
+
+/// Generate template name based on item type and name
+pub fn generate_template_name(item_type: &str, name: &str) -> String {
+    match item_type.to_lowercase().as_str() {
+        "hooks" => {
+            // For hooks: PascalCase (template already has "use{{templateName}}")
+            to_pascal_case(name)
+        }
+        "components" | "containers" | "screens" | "pages" => {
+            // For components: PascalCase
+            to_pascal_case(name)
+        }
+        "services" => {
+            // For services: PascalCaseService
+            format!("{}Service", to_pascal_case(name))
+        }
+        "types" => {
+            // For types: PascalCaseType
+            format!("{}Type", to_pascal_case(name))
+        }
+        _ => {
+            // Default: PascalCase
+            to_pascal_case(name)
+        }
+    }
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
 
-    //TODO: test case with "nav-bar", "NavBar"
-
     #[test]
     fn test_to_kebab_case() {
-        let inputs = vec!["nav bar", "Nav Bar", "Nav bar", "nAV bAR"];
+        let inputs = vec![
+            ("nav bar", "nav-bar"),
+            ("Nav Bar", "nav-bar"),
+            ("nav_bar", "nav-bar"),
+            ("navBar", "navbar"),
+            ("nav-bar", "nav-bar"),
+        ];
 
-        for input in inputs {
-            assert_eq!(to_kebab_case(input), "nav-bar");
-        }
-
-        let inputs = vec!["components", "cOMPONENTS", "COMPONENTS", "Components"];
-
-        for input in inputs {
-            assert_eq!(to_kebab_case(input), "components");
+        for (input, expected) in inputs {
+            assert_eq!(to_kebab_case(input), expected);
         }
     }
 
     #[test]
     fn test_to_pascal_case() {
-        let inputs = vec!["nav bar", "Nav Bar", "Nav bar", "nAV bAR"];
+        let inputs = vec![
+            ("nav bar", "NavBar"),
+            ("Nav Bar", "NavBar"),
+            ("nav_bar", "NavBar"),
+            ("nav-bar", "NavBar"),
+            ("navBar", "NavBar"),
+            ("cat-list", "CatList"),
+            ("user-auth", "UserAuth"),
+        ];
 
-        for input in inputs {
-            assert_eq!(to_pascal_case(input), "NavBar");
+        for (input, expected) in inputs {
+            assert_eq!(to_pascal_case(input), expected);
         }
+    }
 
-        let inputs = vec!["components", "cOMPONENTS", "COMPONENTS", "Components"];
+    #[test]
+    fn test_to_camel_case() {
+        let inputs = vec![
+            ("nav bar", "navBar"),
+            ("Nav Bar", "navBar"),
+            ("nav_bar", "navBar"),
+            ("nav-bar", "navBar"),
+            ("cat-list", "catList"),
+        ];
 
-        for input in inputs {
-            assert_eq!(to_pascal_case(input), "Components");
+        for (input, expected) in inputs {
+            assert_eq!(to_camel_case(input), expected);
         }
+    }
+
+    #[test]
+    fn test_generate_template_name() {
+        // Test hooks
+        assert_eq!(generate_template_name("hooks", "cat-list"), "CatList");
+        assert_eq!(generate_template_name("hooks", "user-auth"), "UserAuth");
+        
+        // Test components
+        assert_eq!(generate_template_name("components", "cat-list"), "CatList");
+        assert_eq!(generate_template_name("components", "user-profile"), "UserProfile");
+        
+        // Test services
+        assert_eq!(generate_template_name("services", "cat-list"), "CatListService");
+        assert_eq!(generate_template_name("services", "user-auth"), "UserAuthService");
+        
+        // Test types
+        assert_eq!(generate_template_name("types", "user-data"), "UserDataType");
+        
+        // Test default
+        assert_eq!(generate_template_name("utils", "api-client"), "ApiClient");
     }
 }

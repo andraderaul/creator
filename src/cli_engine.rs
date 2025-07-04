@@ -306,7 +306,7 @@ impl CliEngine {
         name: &str,
         item_config: &crate::config::Item,
     ) -> Result<()> {
-        use crate::file_utils::{create_file, create_folder, to_kebab_case, to_pascal_case};
+        use crate::file_utils::{create_file, create_folder, to_kebab_case, generate_template_name};
         use crate::generator::Generator;
 
         // Build path: source_dir/category/name/item_type
@@ -325,7 +325,8 @@ impl CliEngine {
             .join("index")
             .with_extension(&item_config.file_extension);
 
-        let template_content = Generator::generate(&template_path, to_pascal_case(name))?;
+        let template_name = generate_template_name(item_type, name);
+        let template_content = Generator::generate(&template_path, template_name)?;
         create_file(&file_path, template_content)?;
 
         Ok(())
