@@ -37,4 +37,7 @@ pub enum Commands {
         #[clap(short = 'p', long = "preset", help = "Preset configuration to use")]
         preset: Option<String>,
     },
+
+    #[clap(about = "Run interactive mode for guided project setup")]
+    Interactive,
 }

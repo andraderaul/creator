@@ -261,6 +261,28 @@ impl CliEngine {
         Ok(())
     }
 
+    /// Handle interactive command execution
+    pub fn handle_interactive(&self) -> Result<()> {
+        // Run the interactive flow and execute the returned command
+        let interactive_command = self.run_interactive()?;
+
+        // Execute the command chosen interactively
+        match interactive_command {
+            Commands::Create { .. } => self.handle_create(interactive_command)?,
+            Commands::List { .. } => self.handle_list(interactive_command)?,
+            Commands::Interactive => {
+                // Prevent infinite recursion - should not happen
+                return Err(anyhow!("Interactive mode cannot call itself"));
+            }
+            Commands::Init { .. } => {
+                // Init command not supported in interactive mode for now
+                return Err(anyhow!("Init command not available in interactive mode"));
+            }
+        }
+
+        Ok(())
+    }
+
     /// List all available categories
     fn list_all_categories(&self) -> Result<()> {
         println!("📋 Available modules in '{}':", self.config.project.name);
@@ -949,5 +971,4 @@ mod tests {
         assert!(result.is_err());
         assert!(result.unwrap_err().to_string().contains("not found"));
     }
-
 }
