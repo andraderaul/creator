@@ -91,8 +91,13 @@ pub fn to_camel_case(input: &str) -> String {
 pub fn generate_template_name(item_type: &str, name: &str) -> String {
     match item_type.to_lowercase().as_str() {
         "hooks" => {
-            // For hooks: PascalCase (template already has "use{{templateName}}")
-            to_pascal_case(name)
+            // For hooks: remove "use-" prefix if present, then PascalCase
+            let clean_name = if name.starts_with("use-") {
+                &name[4..] // Remove "use-" prefix
+            } else {
+                name
+            };
+            to_pascal_case(clean_name)
         }
         "components" | "containers" | "screens" | "pages" => {
             // For components: PascalCase
@@ -111,6 +116,17 @@ pub fn generate_template_name(item_type: &str, name: &str) -> String {
             to_pascal_case(name)
         }
     }
+}
+
+/// Validates if a name contains only valid characters for file/directory names
+/// Allows: letters, numbers, hyphens, underscores
+/// Rejects: special characters like @, #, $, /, \, etc.
+pub fn is_valid_name(name: &str) -> bool {
+    if name.is_empty() {
+        return false;
+    }
+    
+    name.chars().all(|c| c.is_alphanumeric() || c == '-' || c == '_')
 }
 
 #[cfg(test)]
@@ -169,6 +185,8 @@ mod test {
         // Test hooks
         assert_eq!(generate_template_name("hooks", "cat-list"), "CatList");
         assert_eq!(generate_template_name("hooks", "user-auth"), "UserAuth");
+        assert_eq!(generate_template_name("hooks", "use-cats"), "Cats");
+        assert_eq!(generate_template_name("hooks", "use-user-data"), "UserData");
         
         // Test components
         assert_eq!(generate_template_name("components", "cat-list"), "CatList");

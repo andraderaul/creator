@@ -4,7 +4,7 @@ use std::path::PathBuf;
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 #[clap(
-    about = "CLI tool for creating React Native structure folders",
+    about = "CLI tool for creating cohesive module structures in projects",
     author = "Raul Andrade"
 )]
 pub struct Opts {
@@ -20,24 +20,18 @@ pub struct Opts {
 
 #[derive(Subcommand, Debug)]
 pub enum Commands {
-    #[clap(about = "Create a new item in a category")]
+    #[clap(about = "Create a new item in a module (module/item_type/name)")]
     Create {
-        #[clap(short = 'c', long = "category", help = "Category to create in")]
-        category: Option<String>,
-
-        #[clap(short = 'i', long = "item", help = "Item type to create")]
-        item: Option<String>,
-
-        #[clap(short = 'n', long = "name", help = "Name of the new item")]
-        name: Option<String>,
+        #[clap(help = "Path in format: module/item_type/name")]
+        path: String,
     },
 
-    #[clap(about = "List available categories and items from config")]
+    #[clap(about = "List available modules and items from config")]
     List {
         #[clap(
-            short = 'c',
-            long = "category",
-            help = "Show items for specific category"
+            short = 'm',
+            long = "module",
+            help = "Show items for specific module"
         )]
         category: Option<String>,
     },

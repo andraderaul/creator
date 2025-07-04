@@ -1,30 +1,17 @@
 {
   "project": {
-    "name": "my-react-native-clean-app",
-    "version": "2.0",
+    "name": "my-project",
+    "version": "1.0",
     "structure": {
-      "infra": {
-        "description": "External configurations and integrations",
-        "children": {
-          "clients": {
-            "template": "templates/default.hbs",
-            "file_extension": "ts"
-          },
-          "providers": {
-            "template": "templates/default.hbs",
-            "file_extension": "ts"
-          },
-          "config": {
-            "template": "templates/default.hbs",
-            "file_extension": "ts"
-          }
-        }
-      },
-      "features": {
-        "description": "Business features with dynamic creation support",
+      "modules": {
+        "description": "Business modules with cohesive structure",
         "allow_dynamic_children": true,
         "default_structure": {
-          "modules": {
+          "components": {
+            "template": "templates/components.hbs",
+            "file_extension": "tsx"
+          },
+          "containers": {
             "template": "templates/components.hbs",
             "file_extension": "tsx"
           },
@@ -35,29 +22,7 @@
           "hooks": {
             "template": "templates/hooks.hbs",
             "file_extension": "ts"
-          }
-        }
-      },
-      "pages": {
-        "description": "Application pages/screens",
-        "children": {
-          "dashboard": {
-            "template": "templates/components.hbs",
-            "file_extension": "tsx"
           },
-          "login": {
-            "template": "templates/components.hbs",
-            "file_extension": "tsx"
-          },
-          "profile": {
-            "template": "templates/components.hbs",
-            "file_extension": "tsx"
-          }
-        }
-      },
-      "core": {
-        "description": "Core utilities and shared code",
-        "children": {
           "types": {
             "template": "templates/default.hbs",
             "file_extension": "ts"
@@ -66,8 +31,50 @@
             "template": "templates/default.hbs",
             "file_extension": "ts"
           },
+          "providers": {
+            "template": "templates/components.hbs",
+            "file_extension": "tsx"
+          },
+          "bridges": {
+            "template": "templates/components.hbs",
+            "file_extension": "tsx"
+          }
+        }
+      },
+      "shared": {
+        "description": "Shared utilities and components",
+        "children": {
+          "components": {
+            "template": "templates/components.hbs",
+            "file_extension": "tsx"
+          },
           "hooks": {
             "template": "templates/hooks.hbs",
+            "file_extension": "ts"
+          },
+          "utils": {
+            "template": "templates/default.hbs",
+            "file_extension": "ts"
+          },
+          "types": {
+            "template": "templates/default.hbs",
+            "file_extension": "ts"
+          },
+          "constants": {
+            "template": "templates/default.hbs",
+            "file_extension": "ts"
+          }
+        }
+      },
+      "external": {
+        "description": "External integrations and APIs",
+        "children": {
+          "apis": {
+            "template": "templates/default.hbs",
+            "file_extension": "ts"
+          },
+          "clients": {
+            "template": "templates/default.hbs",
             "file_extension": "ts"
           }
         }

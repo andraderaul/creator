@@ -3,6 +3,8 @@ use inquire::{validator::Validation, Select, Text};
 use std::path::PathBuf;
 
 use crate::config::ProjectConfig;
+use crate::file_utils::{generate_template_name, to_kebab_case, to_pascal_case, is_valid_name};
+use crate::generator::Generator;
 use crate::opts::Commands;
 
 pub struct CliEngine {
@@ -18,7 +20,7 @@ impl CliEngine {
 
     /// Run interactive CLI to get user commands
     pub fn run_interactive(&self) -> Result<Commands> {
-        println!("🚀 Creator v2.0 - Dynamic Config Loaded");
+        println!("🚀 Creator v1.0 - Dynamic Config Loaded");
         println!("📋 Project: {}", self.config.project.name);
 
         // Discover available categories
@@ -41,142 +43,135 @@ impl CliEngine {
         }
     }
 
-    /// Interactive create flow
+    /// Interactive create flow - unified cohesive module API
     fn interactive_create(&self) -> Result<Commands> {
-        // Step 1: Select category
-        let categories = self.config.get_categories();
-        let category_name = Select::new("Select category:", categories)
+        println!("🏗️  Creating new item in cohesive module structure...");
+        println!("💡 Format: module/item_type/name");
+        println!();
+
+        // Step 1: Get module name
+        let module_name = Text::new("Enter module name:")
+            .with_placeholder("e.g., cats, users, auth")
+            .with_validator(|input: &str| {
+                if input.trim().is_empty() {
+                    Ok(Validation::Invalid("Module name cannot be empty".into()))
+                } else if input.chars().any(|c| !c.is_alphanumeric() && c != '_' && c != '-') {
+                    Ok(Validation::Invalid("Module name can only contain alphanumeric characters, underscore, and dash".into()))
+                } else {
+                    Ok(Validation::Valid)
+                }
+            })
             .prompt()
-            .map_err(|_| anyhow!("Failed to select category"))?;
+            .map_err(|_| anyhow!("Failed to get module name"))?;
 
-        let category = self
-            .config
-            .get_category(&category_name)
-            .ok_or_else(|| anyhow!("Category '{}' not found", category_name))?;
-
-        // Step 2: Determine if static or dynamic
-        let available_items = category.get_item_names();
-        let supports_dynamic = category.supports_dynamic_children();
-
-        let mut options = available_items.clone();
-        if supports_dynamic {
-            options.push("Create new (dynamic)".to_string());
+        // Step 2: Collect all available item types from all categories
+        let mut all_item_types = Vec::new();
+        
+        for category_name in self.config.get_categories() {
+            if let Some(category) = self.config.get_category(&category_name) {
+                // Add static items
+                let static_items = category.get_item_names();
+                for item in static_items {
+                    all_item_types.push(format!("{} ({})", item, category_name));
+                }
+                
+                // Add dynamic items
+                if category.supports_dynamic_children() {
+                    if let Some(default_structure) = category.get_default_structure() {
+                        for item in default_structure.keys() {
+                            all_item_types.push(format!("{} ({})", item, category_name));
+                        }
+                    }
+                }
+            }
         }
 
-        if options.is_empty() {
-            return Err(anyhow!(
-                "Category '{}' has no available items",
-                category_name
-            ));
+        if all_item_types.is_empty() {
+            return Err(anyhow!("No item types found in any module"));
         }
+
+        all_item_types.sort();
 
         // Step 3: Select item type
-        let selected_item = Select::new("Select item type:", options)
+        let selected_item_display = Select::new("Select item type:", all_item_types)
             .prompt()
             .map_err(|_| anyhow!("Failed to select item type"))?;
 
-        // Step 4: Handle dynamic creation or get name
-        let (item_type, item_name) = if selected_item == "Create new (dynamic)" {
-            // Dynamic creation - get both type and name
-            if let Some(default_structure) = category.get_default_structure() {
-                let default_types: Vec<String> = default_structure.keys().cloned().collect();
+        // Extract item type from "item_type (module)" format
+        let item_type = selected_item_display
+            .split(" (")
+            .next()
+            .ok_or_else(|| anyhow!("Invalid item type format"))?;
 
-                let item_type = if default_types.len() == 1 {
-                    default_types[0].clone()
+        // Step 4: Get item name
+        let item_name = Text::new(&format!("Enter name for {}:", item_type))
+            .with_placeholder("e.g., cat-list, user-profile")
+            .with_validator(|input: &str| {
+                if input.trim().is_empty() {
+                    Ok(Validation::Invalid("Item name cannot be empty".into()))
+                } else if input.chars().any(|c| !c.is_alphanumeric() && c != '_' && c != '-') {
+                    Ok(Validation::Invalid("Item name can only contain alphanumeric characters, underscore, and dash".into()))
                 } else {
-                    Select::new("Select default item type:", default_types)
-                        .prompt()
-                        .map_err(|_| anyhow!("Failed to select default item type"))?
-                };
+                    Ok(Validation::Valid)
+                }
+            })
+            .prompt()
+            .map_err(|_| anyhow!("Failed to get item name"))?;
 
-                let item_name = Text::new("Enter name for the new item:")
-                    .with_validator(|input: &str| {
-                        if input.trim().is_empty() {
-                            Ok(Validation::Invalid("Name cannot be empty".into()))
-                        } else if input.chars().any(|c| !c.is_alphanumeric() && c != '_' && c != '-') {
-                            Ok(Validation::Invalid("Name can only contain alphanumeric characters, underscore, and dash".into()))
-                        } else {
-                            Ok(Validation::Valid)
-                        }
-                    })
-                    .prompt()
-                    .map_err(|_| anyhow!("Failed to get item name"))?;
+        // Build path in module/item_type/name format
+        let path = format!("{}/{}/{}", module_name, item_type, item_name);
 
-                (item_type, item_name)
-            } else {
-                return Err(anyhow!(
-                    "Category '{}' supports dynamic children but has no default structure",
-                    category_name
-                ));
-            }
-        } else {
-            // Static item - just get name
-            let item_name = Text::new(&format!("Enter name for {}:", selected_item))
-                .with_validator(|input: &str| {
-                    if input.trim().is_empty() {
-                        Ok(Validation::Invalid("Name cannot be empty".into()))
-                    } else if input
-                        .chars()
-                        .any(|c| !c.is_alphanumeric() && c != '_' && c != '-')
-                    {
-                        Ok(Validation::Invalid(
-                            "Name can only contain alphanumeric characters, underscore, and dash"
-                                .into(),
-                        ))
-                    } else {
-                        Ok(Validation::Valid)
-                    }
-                })
-                .prompt()
-                .map_err(|_| anyhow!("Failed to get item name"))?;
+        println!();
+        println!("📁 Will create: {}", path);
 
-            (selected_item, item_name)
-        };
-
-        Ok(Commands::Create {
-            category: Some(category_name),
-            item: Some(item_type),
-            name: Some(item_name),
-        })
+        Ok(Commands::Create { path })
     }
 
-    /// Handle create command execution
+    /// Handle create command execution - unified API for cohesive modules
     pub fn handle_create(&self, cmd: Commands) -> Result<()> {
-        if let Commands::Create {
-            category,
-            item,
-            name,
-        } = cmd
-        {
-            let category_name = category.ok_or_else(|| anyhow!("Category is required"))?;
-            let item_type = item.ok_or_else(|| anyhow!("Item type is required"))?;
-            let item_name = name.ok_or_else(|| anyhow!("Item name is required"))?;
+        if let Commands::Create { path } = cmd {
+            println!("🏗️  Creating item from path: {}", path);
+            
+            // Parse path: module/item_type/name
+            let parts: Vec<&str> = path.split('/').collect();
+            if parts.len() != 3 {
+                return Err(anyhow!(
+                    "Invalid path format. Expected: module/item_type/name, got: {}\n💡 Example: cats/components/cat-list",
+                    path
+                ));
+            }
 
-            println!(
-                "🏗️  Creating {} '{}' in category '{}'...",
-                item_type, item_name, category_name
-            );
+            let module_name = parts[0];
+            let item_type = parts[1];
+            let item_name = parts[2];
 
-            // Get category and validate
-            let category = self
-                .config
-                .get_category(&category_name)
-                .ok_or_else(|| anyhow!("Category '{}' not found", category_name))?;
+            // Validate names contain only valid characters
+            if !is_valid_name(module_name) {
+                return Err(anyhow!(
+                    "Invalid module name '{}'. Use only letters, numbers, hyphens, and underscores.",
+                    module_name
+                ));
+            }
+            
+            if !is_valid_name(item_name) {
+                return Err(anyhow!(
+                    "Invalid item name '{}'. Use only letters, numbers, hyphens, and underscores.",
+                    item_name
+                ));
+            }
 
-            // Determine item template
-            let item_config = if let Some(static_item) = category.get_item(&item_type) {
-                // Static item
+            // Find category that supports the item_type
+            let (category_name, category) = self.find_category_for_item_type(item_type)?;
+
+            // Get item configuration
+            let item_config = if let Some(static_item) = category.get_item(item_type) {
                 static_item
             } else if category.supports_dynamic_children() {
-                // Dynamic item - use default structure
                 let default_structure = category.get_default_structure().ok_or_else(|| {
-                    anyhow!(
-                        "Category '{}' supports dynamic children but has no default structure",
-                        category_name
-                    )
+                    anyhow!("Category '{}' supports dynamic children but has no default structure", category_name)
                 })?;
 
-                default_structure.get(&item_type).ok_or_else(|| {
+                default_structure.get(item_type).ok_or_else(|| {
                     anyhow!("Item type '{}' not found in default structure", item_type)
                 })?
             } else {
@@ -187,12 +182,12 @@ impl CliEngine {
                 ));
             };
 
-            // Create the item using Creator
-            self.create_item_with_config(&category_name, &item_type, &item_name, &item_config)?;
+            // Create the item using the cohesive module structure
+            self.create_cohesive_module_item(&category_name, module_name, item_type, item_name, item_config)?;
 
             println!(
-                "✅ Successfully created {} '{}' in {}/{}",
-                item_type, item_name, category_name, item_type
+                "✅ Successfully created {} '{}' in module '{}'",
+                item_type, item_name, module_name
             );
         } else {
             return Err(anyhow!("Invalid command for create handler"));
@@ -218,9 +213,11 @@ impl CliEngine {
         Ok(())
     }
 
+
+
     /// List all available categories
     fn list_all_categories(&self) -> Result<()> {
-        println!("📋 Available categories in '{}':", self.config.project.name);
+        println!("📋 Available modules in '{}':", self.config.project.name);
         println!();
 
         for category_name in self.config.get_categories() {
@@ -258,7 +255,7 @@ impl CliEngine {
             .get_category(category_name)
             .ok_or_else(|| anyhow!("Category '{}' not found", category_name))?;
 
-        println!("📁 Category: {}", category_name);
+        println!("📁 Module: {}", category_name);
 
         if let Some(description) = &category.description {
             println!("   {}", description);
@@ -298,22 +295,25 @@ impl CliEngine {
         Ok(())
     }
 
-    /// Create item using the Creator with dynamic config
-    fn create_item_with_config(
+
+
+    /// Create item in cohesive module structure: modules/module_name/item_type/item_name.ext
+    fn create_cohesive_module_item(
         &self,
         category: &str,
+        module_name: &str,
         item_type: &str,
-        name: &str,
+        item_name: &str,
         item_config: &crate::config::Item,
     ) -> Result<()> {
         use crate::file_utils::{create_file, create_folder, to_kebab_case, generate_template_name};
         use crate::generator::Generator;
 
-        // Build path: source_dir/category/name/item_type
+        // Build path: source_dir/modules/module_name/item_type/
         let item_path = self
             .source_dir
             .join(category)
-            .join(to_kebab_case(name))
+            .join(to_kebab_case(module_name))
             .join(item_type);
 
         // Create folder structure
@@ -322,13 +322,59 @@ impl CliEngine {
         // Generate file from template
         let template_path = PathBuf::from(&item_config.template);
         let file_path = item_path
-            .join("index")
+            .join(to_kebab_case(item_name))
             .with_extension(&item_config.file_extension);
 
-        let template_name = generate_template_name(item_type, name);
+        let template_name = generate_template_name(item_type, item_name);
         let template_content = Generator::generate(&template_path, template_name)?;
         create_file(&file_path, template_content)?;
 
         Ok(())
+    }
+
+    /// Find category that contains the specified item type
+    fn find_category_for_item_type(&self, item_type: &str) -> Result<(String, &crate::config::Category)> {
+        for category_name in self.config.get_categories() {
+            if let Some(category) = self.config.get_category(&category_name) {
+                // Check static items
+                if category.get_item(item_type).is_some() {
+                    return Ok((category_name, category));
+                }
+                
+                // Check dynamic items
+                if category.supports_dynamic_children() {
+                    if let Some(default_structure) = category.get_default_structure() {
+                        if default_structure.contains_key(item_type) {
+                            return Ok((category_name, category));
+                        }
+                    }
+                }
+            }
+        }
+
+        // Build helpful error message with available types
+        let mut available_types = Vec::new();
+        for category_name in self.config.get_categories() {
+            if let Some(category) = self.config.get_category(&category_name) {
+                let static_items = category.get_item_names();
+                for item in static_items {
+                    available_types.push(format!("{} (in {})", item, category_name));
+                }
+                
+                if category.supports_dynamic_children() {
+                    if let Some(default_structure) = category.get_default_structure() {
+                        for item in default_structure.keys() {
+                            available_types.push(format!("{} (in {})", item, category_name));
+                        }
+                    }
+                }
+            }
+        }
+
+        Err(anyhow!(
+            "Item type '{}' not found in any module.\n💡 Available types:\n  {}",
+            item_type,
+            available_types.join("\n  ")
+        ))
     }
 }

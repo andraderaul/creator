@@ -4,7 +4,7 @@ use creator::app::{execute_config, Config};
 use creator::opts::Opts;
 
 fn main() -> anyhow::Result<()> {
-    println!("🚀 Creator v2.0 - Dynamic Configuration System");
+    println!("🚀 Creator v1.0 - Dynamic Configuration System");
 
     let opts = Opts::parse();
 
@@ -16,12 +16,15 @@ fn main() -> anyhow::Result<()> {
             eprintln!();
             eprintln!("💡 Quick start options:");
             eprintln!(
-                "   creator init                    # Initialize with interactive preset selection"
+                "   creator init                              # Initialize with interactive preset selection"
             );
-            eprintln!("   creator init -p clean-architecture  # Use clean architecture preset");
-            eprintln!("   creator init -p module-based         # Use module-based preset");
+            eprintln!("   creator init -p clean-architecture        # Use clean architecture preset");
+            eprintln!("   creator init -p module-based              # Use module-based preset");
             eprintln!(
-                "   creator list                    # List available structure (if config exists)"
+                "   creator create cats/components/cat-list   # Create item in cohesive module structure"
+            );
+            eprintln!(
+                "   creator list                              # List available modules (if config exists)"
             );
             eprintln!();
             eprintln!("📖 For more help: creator --help");

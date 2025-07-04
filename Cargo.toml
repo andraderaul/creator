@@ -2,7 +2,7 @@
 name = "creator"
 version = "0.1.0"
 edition = "2021"
-about = "CLI tool for creating React Native structure folders"
+about = "CLI tool for creating cohesive module structures in projects"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
