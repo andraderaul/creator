@@ -1,4 +1,4 @@
-# Creator v2.0 🚀
+# Creator v1.0 🚀
 
 [![Code Quality](https://github.com/andraderaul/creator/actions/workflows/quality.yml/badge.svg)](https://github.com/andraderaul/creator/actions/workflows/quality.yml) [![Release](https://github.com/andraderaul/creator/actions/workflows/release.yml/badge.svg)](https://github.com/andraderaul/creator/actions/workflows/release.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
@@ -18,8 +18,6 @@
 - [Contact](#contact)
 
 ## Features
-
-**Creator v2.0** is a complete architectural rewrite with powerful new capabilities:
 
 - [x] **Dynamic Configuration System**: 100% configuration-driven CLI with no hardcoded commands
 - [x] **Flexible Project Structures**: Support for any project architecture via JSON configuration
