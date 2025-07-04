@@ -141,9 +141,28 @@ impl CliEngine {
                 ));
             }
 
-            let module_name = parts[0];
-            let item_type = parts[1];
-            let item_name = parts[2];
+            let first_part = parts[0];
+            let second_part = parts[1];
+            let third_part = parts[2];
+
+            // Check if first part is a static category
+            let (category_name, category, module_name, item_type, item_name) = 
+                if let Some(category) = self.config.get_category(first_part) {
+                    if !category.supports_dynamic_children() {
+                        // Static category: category/item_type/item_name
+                        (first_part.to_string(), category, first_part, second_part, third_part)
+                    } else {
+                        // Dynamic category specified: treat as module_name/item_type/item_name
+                        let item_type = second_part;
+                        let (cat_name, cat) = self.find_category_for_item_type(item_type)?;
+                        (cat_name, cat, first_part, second_part, third_part)
+                    }
+                } else {
+                    // Normal case: module_name/item_type/item_name
+                    let item_type = second_part;
+                    let (cat_name, cat) = self.find_category_for_item_type(item_type)?;
+                    (cat_name, cat, first_part, second_part, third_part)
+                };
 
             // Validate names contain only valid characters
             if !is_valid_name(module_name) {
@@ -159,9 +178,6 @@ impl CliEngine {
                     item_name
                 ));
             }
-
-            // Find category that supports the item_type
-            let (category_name, category) = self.find_category_for_item_type(item_type)?;
 
             // Get item configuration
             let item_config = if let Some(static_item) = category.get_item(item_type) {
@@ -182,8 +198,14 @@ impl CliEngine {
                 ));
             };
 
-            // Create the item using the cohesive module structure
-            self.create_cohesive_module_item(&category_name, module_name, item_type, item_name, item_config)?;
+            // Create the item using the appropriate structure
+            if category.supports_dynamic_children() {
+                // Dynamic category: category/module_name/item_type/item_name.ext
+                self.create_cohesive_module_item(&category_name, module_name, item_type, item_name, item_config)?;
+            } else {
+                // Static category: category/item_type/item_name.ext
+                self.create_static_category_item(&category_name, item_type, item_name, item_config)?;
+            }
 
             println!(
                 "✅ Successfully created {} '{}' in module '{}'",
@@ -297,7 +319,7 @@ impl CliEngine {
 
 
 
-    /// Create item in cohesive module structure: modules/module_name/item_type/item_name.ext
+    /// Create item in cohesive module structure: category/module_name/item_type/item_name.ext
     fn create_cohesive_module_item(
         &self,
         category: &str,
@@ -309,7 +331,7 @@ impl CliEngine {
         use crate::file_utils::{create_file, create_folder, to_kebab_case, generate_template_name};
         use crate::generator::Generator;
 
-        // Build path: source_dir/modules/module_name/item_type/
+        // Build path: source_dir/category/module_name/item_type/
         let item_path = self
             .source_dir
             .join(category)
@@ -332,22 +354,65 @@ impl CliEngine {
         Ok(())
     }
 
+    /// Create item in static category structure: category/item_type/item_name.ext
+    fn create_static_category_item(
+        &self,
+        category: &str,
+        item_type: &str,
+        item_name: &str,
+        item_config: &crate::config::Item,
+    ) -> Result<()> {
+        use crate::file_utils::{create_file, create_folder, to_kebab_case, generate_template_name};
+        use crate::generator::Generator;
+
+        // Build path: source_dir/category/item_type/
+        let item_path = self
+            .source_dir
+            .join(category)
+            .join(item_type);
+
+        // Create folder structure
+        create_folder(&item_path)?;
+
+        // Generate file from template
+        let template_path = PathBuf::from(&item_config.template);
+        let file_path = item_path
+            .join(to_kebab_case(item_name))
+            .with_extension(&item_config.file_extension);
+
+        let template_name = generate_template_name(item_type, item_name);
+        let template_content = Generator::generate(&template_path, template_name)?;
+        create_file(&file_path, template_content)?;
+
+        Ok(())
+    }
+
     /// Find category that contains the specified item type
     fn find_category_for_item_type(&self, item_type: &str) -> Result<(String, &crate::config::Category)> {
+        // First, check dynamic categories (they have priority for cohesive modules)
         for category_name in self.config.get_categories() {
             if let Some(category) = self.config.get_category(&category_name) {
-                // Check static items
-                if category.get_item(item_type).is_some() {
-                    return Ok((category_name, category));
-                }
-                
-                // Check dynamic items
                 if category.supports_dynamic_children() {
                     if let Some(default_structure) = category.get_default_structure() {
                         if default_structure.contains_key(item_type) {
                             return Ok((category_name, category));
                         }
                     }
+                }
+            }
+        }
+        
+        // Then check static categories
+        for category_name in self.config.get_categories() {
+            if let Some(category) = self.config.get_category(&category_name) {
+                // Skip dynamic categories (already checked)
+                if category.supports_dynamic_children() {
+                    continue;
+                }
+                
+                // Check static items
+                if category.get_item(item_type).is_some() {
+                    return Ok((category_name, category));
                 }
             }
         }
