@@ -31,44 +31,33 @@ impl TryFrom<Opts> for Config {
 
 fn get_commands(commands: Option<Commands>, config_path: &PathBuf) -> Result<Commands> {
     if let Some(c) = commands {
-        // Commands provided via CLI - validate config but don't run interactive mode
-        let _project_config = ProjectConfig::load_and_validate(config_path).map_err(|e| {
-            anyhow!(
-                "Config validation failed: {}. Please fix {} and try again.",
-                e,
-                config_path.display()
-            )
-        })?;
+        // Commands provided via CLI - validate config for all commands except Interactive
+        match &c {
+            Commands::Interactive => {
+                // Interactive mode - validate config later when running
+                return Ok(c);
+            }
+            _ => {
+                // Other commands - validate config early
+                let _project_config =
+                    ProjectConfig::load_and_validate(config_path).map_err(|e| {
+                        anyhow!(
+                            "Config validation failed: {}. Please fix {} and try again.",
+                            e,
+                            config_path.display()
+                        )
+                    })?;
+            }
+        }
 
         return Ok(c);
     }
 
-    // No commands provided - run interactive mode
-    // Load config early (early loading strategy)
-    let project_config = match ProjectConfig::load_and_validate(config_path) {
-        Ok(config) => config,
-        Err(e) => {
-            // Graceful degradation - try to help user fix config
-            eprintln!("⚠️  Config validation failed: {}", e);
-            eprintln!("💡 Would you like to:");
-            eprintln!("   1. Fix the config file manually");
-            eprintln!("   2. Use basic interactive mode");
-            eprintln!("   3. Exit and check config");
-
-            // For now, return error but in future could implement fallback mode
-            return Err(anyhow!(
-                "Invalid config. Please fix {} and try again.",
-                config_path.display()
-            ));
-        }
-    };
-
-    // Create CLI engine with loaded config
-    let source_dir = get_source_dir_from_current()?;
-    let cli_engine = CliEngine::new(project_config, source_dir);
-
-    // Run interactive CLI to get commands
-    cli_engine.run_interactive()
+    // No commands provided - return error with helpful suggestions
+    // This is now CLI-first: no automatic interactive mode
+    Err(anyhow!(
+        "No command specified. Creator requires explicit commands for automation-friendly operation.\n\n💡 Available commands:\n   creator create <path>        # Create new item\n   creator list                 # List available modules\n   creator init                 # Initialize configuration\n   creator interactive          # Run interactive mode\n   creator --help               # Show detailed help"
+    ))
 }
 
 fn get_config_path(config: Option<PathBuf>) -> Result<PathBuf> {
@@ -146,6 +135,9 @@ pub fn execute_config(config: Config) -> Result<()> {
         Commands::Init { preset } => {
             handle_init(preset.as_deref(), &config.config_path)?;
         }
+        Commands::Interactive => {
+            cli_engine.handle_interactive()?;
+        }
     }
 
     Ok(())
@@ -211,5 +203,207 @@ mod tests {
     fn test_source_dir_detection() {
         let manual_dir = get_source_dir(Some(PathBuf::from("test-src")));
         assert!(manual_dir.is_ok());
+    }
+
+    #[test]
+    fn test_cli_first_behavior_no_commands() {
+        // Test that no commands results in helpful error, not interactive mode
+        use std::fs;
+        use tempfile::TempDir;
+
+        let temp_dir = TempDir::new().unwrap();
+        let config_path = temp_dir.path().join("config.json");
+
+        // Create minimal valid config
+        let config_content = r#"
+        {
+            "project": {
+                "name": "test-project",
+                "version": "1.0",
+                "structure": {
+                    "modules": {
+                        "allow_dynamic_children": true,
+                        "default_structure": {
+                            "components": {
+                                "template": "templates/components.hbs",
+                                "file_extension": "tsx"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        "#;
+        fs::write(&config_path, config_content).unwrap();
+
+        // Test CLI-first behavior: no commands = error, not interactive
+        let result = get_commands(None, &config_path);
+        assert!(result.is_err());
+
+        let error_msg = result.unwrap_err().to_string();
+        assert!(error_msg.contains("No command specified"));
+        assert!(error_msg.contains("automation-friendly"));
+        assert!(error_msg.contains("creator interactive"));
+    }
+
+    #[test]
+    fn test_explicit_interactive_command() {
+        use std::fs;
+        use tempfile::TempDir;
+
+        let temp_dir = TempDir::new().unwrap();
+        let config_path = temp_dir.path().join("config.json");
+
+        // Create minimal valid config
+        let config_content = r#"
+        {
+            "project": {
+                "name": "test-project",
+                "version": "1.0",
+                "structure": {
+                    "modules": {
+                        "allow_dynamic_children": true,
+                        "default_structure": {
+                            "components": {
+                                "template": "templates/components.hbs",
+                                "file_extension": "tsx"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        "#;
+        fs::write(&config_path, config_content).unwrap();
+
+        // Test explicit interactive command
+        let interactive_cmd = Some(Commands::Interactive);
+        let result = get_commands(interactive_cmd, &config_path);
+        assert!(result.is_ok());
+
+        if let Ok(Commands::Interactive) = result {
+            // Success - interactive command was recognized
+        } else {
+            panic!("Expected Interactive command");
+        }
+    }
+
+    #[test]
+    fn test_cli_commands_still_work() {
+        use std::fs;
+        use tempfile::TempDir;
+
+        let temp_dir = TempDir::new().unwrap();
+        let config_path = temp_dir.path().join("config.json");
+
+        // Create minimal valid config
+        let config_content = r#"
+        {
+            "project": {
+                "name": "test-project",
+                "version": "1.0",
+                "structure": {
+                    "modules": {
+                        "allow_dynamic_children": true,
+                        "default_structure": {
+                            "components": {
+                                "template": "templates/components.hbs",
+                                "file_extension": "tsx"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        "#;
+        fs::write(&config_path, config_content).unwrap();
+
+        // Test create command
+        let create_cmd = Some(Commands::Create {
+            path: "users/components/test".to_string(),
+        });
+        let result = get_commands(create_cmd, &config_path);
+        assert!(result.is_ok());
+
+        // Test list command
+        let list_cmd = Some(Commands::List { category: None });
+        let result = get_commands(list_cmd, &config_path);
+        assert!(result.is_ok());
+
+        // Test init command
+        let init_cmd = Some(Commands::Init { preset: None });
+        let result = get_commands(init_cmd, &config_path);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_automation_friendly_behavior() {
+        use std::fs;
+        use tempfile::TempDir;
+
+        let temp_dir = TempDir::new().unwrap();
+        let config_path = temp_dir.path().join("config.json");
+
+        // Create minimal valid config
+        let config_content = r#"
+        {
+            "project": {
+                "name": "test-project",
+                "version": "1.0",
+                "structure": {
+                    "modules": {
+                        "allow_dynamic_children": true,
+                        "default_structure": {
+                            "components": {
+                                "template": "templates/components.hbs",
+                                "file_extension": "tsx"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        "#;
+        fs::write(&config_path, config_content).unwrap();
+
+        // Simulate CI/CD scenario - script calls creator without commands
+        let result = get_commands(None, &config_path);
+
+        // Should fail fast with helpful error, not hang waiting for input
+        assert!(result.is_err());
+
+        // Error should be deterministic and automation-friendly
+        let error_msg = result.unwrap_err().to_string();
+        assert!(error_msg.contains("creator interactive")); // Should mention explicit interactive command
+        assert!(error_msg.contains("automation-friendly")); // Should explain why it's designed this way
+    }
+
+    #[test]
+    fn test_config_validation_still_works() {
+        use std::fs;
+        use tempfile::TempDir;
+
+        let temp_dir = TempDir::new().unwrap();
+        let config_path = temp_dir.path().join("invalid-config.json");
+
+        // Create invalid config
+        let invalid_config = r#"{ "invalid": "json" }"#;
+        fs::write(&config_path, invalid_config).unwrap();
+
+        // All commands except Interactive should validate config early
+        let create_cmd = Some(Commands::Create {
+            path: "users/components/test".to_string(),
+        });
+        let result = get_commands(create_cmd, &config_path);
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Config validation failed"));
+
+        // Interactive command should not validate config early (deferred validation)
+        let interactive_cmd = Some(Commands::Interactive);
+        let result = get_commands(interactive_cmd, &config_path);
+        assert!(result.is_ok()); // Should pass because validation is deferred
     }
 }

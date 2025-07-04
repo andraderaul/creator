@@ -230,7 +230,7 @@ mod tests {
         {
             "project": {
                 "name": "test-project",
-                "version": "2.0",
+                "version": "1.0",
                 "structure": {
                     "features": {
                         "description": "Business features",
@@ -248,7 +248,7 @@ mod tests {
 
         let config: ProjectConfig = serde_json::from_str(config_json).unwrap();
         assert_eq!(config.project.name, "test-project");
-        assert_eq!(config.project.version, "2.0");
+        assert_eq!(config.project.version, "1.0");
         assert!(config.project.structure.contains_key("features"));
 
         // Test validation
@@ -261,7 +261,7 @@ mod tests {
         {
             "project": {
                 "name": "",
-                "version": "2.0",
+                "version": "1.0",
                 "structure": {
                     "features": {
                         "children": {
@@ -286,7 +286,7 @@ mod tests {
         {
             "project": {
                 "name": "test-project",
-                "version": "2.0",
+                "version": "1.0",
                 "structure": {
                     "features": {
                         "description": "Dynamic features",
@@ -317,7 +317,7 @@ mod tests {
         {
             "project": {
                 "name": "test-project",
-                "version": "2.0",
+                "version": "1.0",
                 "structure": {
                     "features": {
                         "description": "Mixed features",
@@ -350,7 +350,7 @@ mod tests {
         {
             "project": {
                 "name": "test-project",
-                "version": "2.0",
+                "version": "1.0",
                 "structure": {
                     "features": {
                         "children": {
@@ -380,7 +380,7 @@ mod tests {
 
         // Validate basic project info
         assert_eq!(config.project.name, "my-react-native-clean-app");
-        assert_eq!(config.project.version, "2.0");
+        assert_eq!(config.project.version, "1.0");
 
         // Test categories
         let categories = config.get_categories();
@@ -414,7 +414,7 @@ mod tests {
 
         // Validate basic project info
         assert_eq!(config.project.name, "my-react-native-modular-app");
-        assert_eq!(config.project.version, "2.0");
+        assert_eq!(config.project.version, "1.0");
 
         // Test categories
         let categories = config.get_categories();
