@@ -1,5 +1,21 @@
-/target
+# Cargo build artifacts
+/target/
 
-/application
-/core
-/features
+# Backup files (temporary files only)
+Cargo.lock.backup
+Cargo.lock.phase*
+*_strategy.md
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test artifacts
+*.tmp
+*.temp
