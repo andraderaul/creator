@@ -30,12 +30,6 @@
 - [x] **Performance Optimized**: <100ms startup time with efficient config parsing
 - [x] **Graceful Error Handling**: Helpful error messages with quick-fix suggestions
 
-### **Breaking Changes from v1**:
-
-- ❌ Removed hardcoded commands (`new-feature`, `new-core`, etc.)
-- ✅ New dynamic system with unlimited configurability
-- ✅ Migration path available via `creator init` command
-
 ## Downloading Artifacts
 
 Currently, you can download pre-built binaries for this project from the [Releases](https://github.com/andraderaul/creator/actions/workflows/release.yml) page. Select the appropriate version and download the binary for your platform.
