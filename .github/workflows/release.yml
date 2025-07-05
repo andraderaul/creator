@@ -1,8 +1,12 @@
 name: Build and Release Binary
 
 on:
-  push:
-    branches: ["main"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g. v0.1.0)'
+        required: true
+        type: string
 
 jobs:
   build:
@@ -43,14 +47,62 @@ jobs:
 
       - name: Archive Binary (Unix)
         if: matrix.os != 'windows-latest'
-        run: cp target/${{ matrix.target }}/release/creator release/
+        run: |
+          cp target/${{ matrix.target }}/release/creator release/
+          cd release
+          tar -czf creator-${{ github.event.inputs.version }}-${{ matrix.name }}.tar.gz creator
+          sha256sum creator-${{ github.event.inputs.version }}-${{ matrix.name }}.tar.gz > creator-${{ github.event.inputs.version }}-${{ matrix.name }}.tar.gz.sha256
 
       - name: Archive Binary (Windows)
         if: matrix.os == 'windows-latest'
-        run: cp target/${{ matrix.target }}/release/creator.exe release/
+        shell: powershell
+        run: |
+          cp target/${{ matrix.target }}/release/creator.exe release/
+          cd release
+          Compress-Archive -Path creator.exe -DestinationPath creator-${{ github.event.inputs.version }}-${{ matrix.name }}.zip
+          Get-FileHash creator-${{ github.event.inputs.version }}-${{ matrix.name }}.zip -Algorithm SHA256 | Select-Object Hash | Out-File -FilePath creator-${{ github.event.inputs.version }}-${{ matrix.name }}.zip.sha256
 
       - name: Upload Release Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.name }}-release
-          path: release
+          path: release/creator-${{ github.event.inputs.version }}-${{ matrix.name }}.*
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+          
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.event.inputs.version }}
+          name: Release ${{ github.event.inputs.version }}
+          files: ./artifacts/**/*
+          generate_release_notes: true
+          body: |
+            ## 🚀 Release ${{ github.event.inputs.version }}
+            
+            ### 📦 Available Binaries:
+            - **Linux x86_64**: `creator-${{ github.event.inputs.version }}-linux-x86_64.tar.gz`
+            - **macOS x86_64**: `creator-${{ github.event.inputs.version }}-macos-x86_64.tar.gz`
+            - **macOS ARM64**: `creator-${{ github.event.inputs.version }}-macos-aarch64.tar.gz`
+            - **Windows x86_64**: `creator-${{ github.event.inputs.version }}-windows-x86_64.zip`
+            
+            ### 🔐 Security Verification:
+            Each binary includes a `.sha256` file for integrity verification.
+            
+            **Verification example on Linux/macOS:**
+            ```bash
+            sha256sum -c creator-${{ github.event.inputs.version }}-linux-x86_64.tar.gz.sha256
+            ```
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
