@@ -6,56 +6,51 @@ on:
 
 jobs:
   build:
-    env:
-      TARGET: x86_64-unknown-linux-musl
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-latest
+            name: linux-x86_64
+          - target: x86_64-apple-darwin
+            os: macos-latest
+            name: macos-x86_64
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            name: macos-aarch64
+          - target: x86_64-pc-windows-gnu
+            os: windows-latest
+            name: windows-x86_64
+    
+    runs-on: ${{ matrix.os }}
+    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Build Linux Binary
-        run: |
-          rustup target add $TARGET
-          cargo build --release --target $TARGET --locked
-
-      - name: Create Release Directory
-        run: mkdir -p release
-        working-directory: ${{ github.workspace }}
-
-      - name: Archive Linux Binary
-        run: cp target/$TARGET/release/creator release/
-        working-directory: ${{ github.workspace }}
-
-      - name: Upload Release Artifacts
-        uses: actions/upload-artifact@v4
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
         with:
-          name: linux-release-${{ env.TARGET }}
-          path: release
+          targets: ${{ matrix.target }}
 
-  build-macos:
-    env:
-      TARGET: x86_64-apple-darwin
-    runs-on: macos-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Build macOS Binary
-        run: |
-          cargo build --release --target $TARGET --locked
+      - name: Build Binary
+        run: cargo build --release --target ${{ matrix.target }} --locked
         env:
-          MACOSX_DEPLOYMENT_TARGET: 10.7
+          MACOSX_DEPLOYMENT_TARGET: ${{ matrix.target == 'x86_64-apple-darwin' && '10.15' || matrix.target == 'aarch64-apple-darwin' && '11.0' || '' }}
 
       - name: Create Release Directory
         run: mkdir -p release
-        working-directory: ${{ github.workspace }}
 
-      - name: Archive macOS Binary
-        run: cp target/$TARGET/release/creator release/
-        working-directory: ${{ github.workspace }}
+      - name: Archive Binary (Unix)
+        if: matrix.os != 'windows-latest'
+        run: cp target/${{ matrix.target }}/release/creator release/
+
+      - name: Archive Binary (Windows)
+        if: matrix.os == 'windows-latest'
+        run: cp target/${{ matrix.target }}/release/creator.exe release/
 
       - name: Upload Release Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: macos-release-${{ env.TARGET }}
+          name: ${{ matrix.name }}-release
           path: release
